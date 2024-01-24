@@ -142,14 +142,17 @@ add_executable(cosim_json cosim_json.cpp)
 target_compile_definitions(cosim_simple PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
 target_compile_options(cosim_simple PUBLIC ${CHRONO_CXX_FLAGS})
 target_link_options(cosim_simple PUBLIC ${CHRONO_LINKER_FLAGS})
+target_compile_features(cosim_simple PUBLIC "cxx_std_17")
 
 target_compile_definitions(cosim_forces PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
 target_compile_options(cosim_forces PUBLIC ${CHRONO_CXX_FLAGS})
 target_link_options(cosim_forces PUBLIC ${CHRONO_LINKER_FLAGS})
+target_compile_features(cosim_forces PUBLIC "cxx_std_17")
 
 target_compile_definitions(cosim_json PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
 target_compile_options(cosim_json PUBLIC ${CHRONO_CXX_FLAGS})
 target_link_options(cosim_json PUBLIC ${CHRONO_LINKER_FLAGS})
+target_compile_features(cosim_json PUBLIC "cxx_std_17")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries

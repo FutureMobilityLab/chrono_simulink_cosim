@@ -40,6 +40,8 @@
 
 #include "chrono_cosimulation/ChCosimulation.h"
 
+#include <filesystem>
+
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
@@ -106,6 +108,24 @@ ChButterworth_Lowpass az_filt(10, step_size, cutoff_freq);
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    // The first item in argv is the path to current executable. Use this to set
+    // the Chrono Data Directory.
+    std::filesystem::path path(argv[0]);
+    std::filesystem::path grandparent_path = path.parent_path().parent_path();
+    std::filesystem::path data_dir_path(grandparent_path.string());
+    data_dir_path.append("data").append("");
+    std::filesystem::path veh_data_path(data_dir_path.string());
+    veh_data_path.append("vehicle").append("");
+    SetChronoDataPath(data_dir_path.string());
+    SetDataPath(veh_data_path.string());
+
+    // If available, use the second argv as the port.
+    int PORT_NUMBER = 50009;
+    if ( argc == 2 ) {
+        PORT_NUMBER = std::stoi(argv[1]);
+    }
+    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+
     // --------------
     // Create systems
     // --------------
@@ -211,9 +231,6 @@ int main(int argc, char* argv[]) {
     car.GetVehicle().EnableRealtime(false);
 
     try {
-        // Create a cosimulation interface and exchange data with Simulink.
-        int PORT_NUMBER = 50009;
-
         // Prepare the two column vectors of data that will be swapped back 
         // and forth between Chrono and Simulink. In detail we will:
         // - receive 6 variables from Simulink (steering, throttle, brake)
@@ -244,12 +261,6 @@ int main(int argc, char* argv[]) {
         // 4) Run the co-simulation
         while (vis->Run()) {
             // A) ----------------- ADVANCE THE Chrono SIMULATION
-
-            // double time = car.GetSystem()->GetChTime();
-
-            // End simulation
-            if (my_time >= t_end)
-                break;
 
             // Render scene and output POV-Ray data
             if (step_number % render_steps == 0) {
@@ -311,7 +322,6 @@ int main(int argc, char* argv[]) {
 
             // - Set the Chrono variables into the vector that must
             //   be sent to Simulink at the next timestep:
-            ChVector<double> cg_location(0,0,0);
             
             // Chassis position w.r.t. global frame. (checked)
             data_out(0) = car.GetChassis()->GetPos().x();
@@ -388,7 +398,6 @@ int main(int argc, char* argv[]) {
             driver.SetSteering(data_in(0) / max_angle);
             driver.SetThrottle(data_in(1));
             driver.SetBraking(0.); // use no braking at this point.
-
         }
     } catch (ChExceptionSocket exception) {
         GetLog() << " ERROR with socket system: \n" << exception.what() << "\n";

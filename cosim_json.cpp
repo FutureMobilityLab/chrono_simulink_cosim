@@ -46,6 +46,8 @@
 
 #include "chrono_cosimulation/ChCosimulation.h"
 
+#include <filesystem>
+
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
@@ -147,6 +149,24 @@ ChButterworth_Lowpass az_filt(10, step_size, cutoff_freq);
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    // The first item in argv is the path to current executable. Use this to set
+    // the Chrono Data Directory.
+    std::filesystem::path path(argv[0]);
+    std::filesystem::path grandparent_path = path.parent_path().parent_path();
+    std::filesystem::path data_dir_path(grandparent_path.string());
+    data_dir_path.append("data").append("");
+    std::filesystem::path veh_data_path(data_dir_path.string());
+    veh_data_path.append("vehicle").append("");
+    SetChronoDataPath(data_dir_path.string());
+    SetDataPath(veh_data_path.string());
+
+    // If available, use the second argv as the port.
+    int PORT_NUMBER = 50009;
+    if ( argc == 2 ) {
+        PORT_NUMBER = std::stoi(argv[1]);
+    }
+    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+
     // --------------
     // Create systems
     // --------------
@@ -234,10 +254,8 @@ int main(int argc, char* argv[]) {
     // the simulation can run faster.
     car.EnableRealtime(false);
 
+    // Create a cosimulation interface and exchange data with Simulink.
     try {
-        // Create a cosimulation interface and exchange data with Simulink.
-        int PORT_NUMBER = 50009;
-
         // Prepare the two column vectors of data that will be swapped back 
         // and forth between Chrono and Simulink. In detail we will:
         // - receive 6 variables from Simulink (steering, throttle, brake)
