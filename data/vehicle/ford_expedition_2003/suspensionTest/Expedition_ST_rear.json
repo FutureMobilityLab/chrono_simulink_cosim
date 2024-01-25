@@ -1,0 +1,15 @@
+{
+  "Name":     "Expedition Rear Suspension Test",
+  "Type":     "Vehicle",
+  "Template": "SuspensionTestRig",
+
+  "Suspension":
+  {
+    "Input File":   "NADS/suspension/ExpeditionRearDoubleWishboneCurve.json",
+    "Location":     [0, 0, 0],
+    "Left Wheel Input File":   "NADS/wheel/WheelSimple.json",
+    "Right Wheel Input File":  "NADS/wheel/WheelSimple.json"
+  },
+
+  "Displacement Limit":     0.15
+}

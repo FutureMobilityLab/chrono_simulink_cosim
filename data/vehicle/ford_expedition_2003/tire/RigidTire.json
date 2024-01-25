@@ -1,0 +1,28 @@
+{
+  "Name":                       "Expedition Rigid Tire",
+  "Type":                       "Tire",
+  "Template":                   "RigidTire",
+
+  "Radius":                     0.4013,
+  "Width":                      0.2642,
+  "Mass":                       35.0,
+  "Inertia":                    [3.0, 6.0, 3.0],
+
+  "Contact Material":
+  {
+      "Coefficient of Friction":    0.9,
+      "Coefficient of Restitution": 0.1,
+
+      "Properties": {
+          "Young Modulus":          2e7,
+          "Poisson Ratio":          0.3
+      },
+
+      "Coefficients": {
+          "Normal Stiffness":       270394,
+          "Normal Damping":         2000.0,
+          "Tangential Stiffness":   2e5,
+          "Tangential Damping":     5000
+      }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "Name":                    "Expedition Simplified Powertrain",
+  "Type":                    "Powertrain",
+  "Template":                "SimpleCVTPowertrain",
+
+  "Forward Gear Ratio":      0.3,
+  "Reverse Gear Ratio":      -0.3,
+  "Maximum Engine Torque":   474.5,
+  "Maximum Engine Power":   80000,
+  "Maximum Engine Speed":    2500
+}

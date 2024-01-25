@@ -93,7 +93,19 @@ class Audi_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-auto vehicle_model = Audi_Model();
+class Expedition_Model : public Vehicle_Model {
+  public:
+    virtual std::string ModelName() const override { return "Ford Expedition 2003"; }
+    virtual std::string VehicleJSON() const override { return "ford_expedition_2003/vehicle/Vehicle_ford_expedition_2003.json"; }
+    virtual std::string TireJSON() const override {
+        return "ford_expedition_2003/tire/TMeasyTire.json";
+    }
+    virtual std::string PowertrainJSON() const override { return "ford_expedition_2003/powertrain/SimpleCVTPowertrain.json"; }
+    virtual double CameraDistance() const override { return 6.0; }
+    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
+};
+
+auto vehicle_model = Expedition_Model();
 
 // JSON files for terrain.v
 std::string rigidterrain_file("terrain/RigidPlane.json");
@@ -115,9 +127,6 @@ VisualizationType tire_vis_type = VisualizationType::MESH;
 
 // Collision type for chassis (PRIMITIVES, MESH, or NONE)
 CollisionType chassis_collision_type = CollisionType::NONE;
-
-// Type of tire model (RIGID, TMEASY, PAC02)
-TireModelType tire_model = TireModelType::TMEASY;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);

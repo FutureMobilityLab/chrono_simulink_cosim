@@ -1,0 +1,73 @@
+{
+  "Name":                       "2003 Ford Expedition Front DoubleWishbone",
+  "Type":                       "Suspension",
+  "Template":                   "DoubleWishbone",
+
+  "Spindle" :
+  {
+    "Mass":                     0.0,
+    "COM":                      [-0.027, 0.845, 0.377],
+    "Inertia":                  [0.0, 0.0, 0.0],
+    "Radius":                   0.15,
+    "Width":                    0.06
+  },
+
+  "Upright":
+  {
+    "Mass":                     63.321,
+    "COM":                      [-0.027, 0.845, 0.377],
+    "Moments of Inertia":       [1.86040, 0.39191, 1.89370],
+    "Products of Inertia":      [0, 0, 0],
+    "Radius":                   0.025
+  },
+
+  "Upper Control Arm":
+  {
+    "Mass":                     3.357,
+    "COM":                      [-0.015, 0.551, 0.709],
+    "Moments of Inertia":       [0.09030, 0.06888, 0.04230],
+    "Products of Inertia":      [0, 0, 0],
+    "Radius":                   0.02,
+    "Location Chassis Front":   [0.175, 0.478, 0.720],
+    "Location Chassis Back":    [-0.163, 0.467, 0.701],
+    "Location Upright":         [-0.051, 0.668, 0.706]
+  },
+
+  "Lower Control Arm":
+  {
+    "Mass":                     8.845,
+    "COM":                      [0.03, 0.564, 0.254],
+    "Moments of Inertia":       [0.31631, 0.20812, 0.15104],
+    "Products of Inertia":      [0, 0, 0],
+    "Radius":                   0.03,
+    "Location Chassis Front":   [0.309, 0.368, 0.279],
+    "Location Chassis Back":    [-0.165, 0.356, 0.296],
+    "Location Upright":         [0.010, 0.787, 0.239]
+  },
+
+  "Tierod":
+  {
+    "Location Chassis":         [0.142, 0.450, 0.389],
+    "Location Upright":         [0.142, 0.790, 0.366]
+  },
+
+  "Spring":
+  {
+    "Location Chassis":         [0.058, 0.531, 0.749],
+    "Location Arm":             [0.057, 0.631, 0.290],
+    "Spring Coefficient":       148133.000,
+    "Free Length" :             0.5364
+  },
+
+  "Shock":
+  {
+    "Location Chassis":         [0.058, 0.531, 0.749],
+    "Location Arm":             [0.057, 0.631, 0.290],
+    "Damping Coefficient":      3033.000
+  },
+
+  "Axle":
+  {
+    "Inertia":                  0.4
+  }
+}

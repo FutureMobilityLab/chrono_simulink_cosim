@@ -1,0 +1,50 @@
+{
+  "Name": "NADS Vehicle - Ford Expedition 2003",
+  "Type": "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis": {
+    "Input File": "ford_expedition_2003/chassis/ExpeditionChassis.json"
+  },
+
+  "Axles": [
+    {
+      "Suspension Input File": "ford_expedition_2003/suspension/ExpeditionFrontDoubleWishboneCurve.json",
+      "Suspension Location": [0, 0, 0],
+      "Steering Index": 0,
+      "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Left Brake Input File": "ford_expedition_2003/brake/BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/brake/BrakeSimple.json",
+      "Antirollbar Input File": "ford_expedition_2003/antirollbar/FrontAntirollBarRSD.json",
+      "Antirollbar Location": [ -0.343, 0.0, 0.290 ]
+    },
+
+    {
+      "Suspension Input File": "ford_expedition_2003/suspension/ExpeditionRearDoubleWishboneCurve.json",
+      "Suspension Location": [0, 0, 0],
+      "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Left Brake Input File": "ford_expedition_2003/brake/BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/brake/BrakeSimple.json",
+      "Antirollbar Input File": "ford_expedition_2003/antirollbar/RearAntirollBarRSD.json",
+      "Antirollbar Location": [ -3.3, 0.0, 0.35 ]
+    }
+  ],
+
+  "Steering Subsystems": [
+    {
+      "Input File": "ford_expedition_2003/steering/ExpeditionRackPinion.json",
+      "Location": [ 0.142, 0, 0.366],
+      "Orientation": [ 0.98699637, 0, 0.16074256, 0 ]
+    }
+  ],
+
+  "Wheelbase": 3.0226,
+  "Maximum Steering Angle": 25,
+
+  "Driveline": {
+    "Input File": "ford_expedition_2003/driveline/Driveline2WD.json",
+    "Suspension Indexes": [ 0 ]
+  }
+}
