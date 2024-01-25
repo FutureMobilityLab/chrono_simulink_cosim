@@ -1,0 +1,46 @@
+{
+  "Name": "BMW 330i 2006 Vehicle",
+  "Type": "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis": {
+    "Input File": "bmw_330i_2006/chassis/Chassis.json"
+  },
+
+  "Axles": [
+    {
+      "Suspension Input File": "bmw_330i_2006/suspension/MacPhersonStrut.json",
+      "Suspension Location": [ 1.25, 0, -0.21 ],
+      "Steering Index": 0,
+      "Left Wheel Input File": "bmw_330i_2006/wheel/WheelSimple.json",
+      "Right Wheel Input File": "bmw_330i_2006/wheel/WheelSimple.json",
+      "Left Brake Input File": "bmw_330i_2006/brake/BrakeSimple.json",
+      "Right Brake Input File": "bmw_330i_2006/brake/BrakeSimple.json"
+    },
+
+    {
+      "Suspension Input File": "bmw_330i_2006/suspension/MultiLink.json",
+      "Suspension Location": [ -1.25, 0, -0.21 ],
+      "Left Wheel Input File": "bmw_330i_2006/wheel/WheelSimple.json",
+      "Right Wheel Input File": "bmw_330i_2006/wheel/WheelSimple.json",
+      "Left Brake Input File": "bmw_330i_2006/brake/BrakeSimple.json",
+      "Right Brake Input File": "bmw_330i_2006/brake/BrakeSimple.json"
+    }
+  ],
+
+  "Steering Subsystems": [
+    {
+      "Input File": "bmw_330i_2006/steering/RackPinion.json",
+      "Location": [ 1.1, 0, -0.4 ],
+      "Orientation": [ 0.98699637, 0, 0.16074256, 0 ]
+    }
+  ],
+
+  "Wheelbase": 2.5,
+  "Maximum Steering Angle (deg)": 25,
+
+  "Driveline": {
+    "Input File": "bmw_330i_2006/driveline/Driveline2WD.json",
+    "Suspension Indexes": [ 1 ]
+  }
+}

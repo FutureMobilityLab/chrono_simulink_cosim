@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle Irrlicht interface
     auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
-    vis->SetWindowTitle("Sedan Demo");
+    vis->SetWindowTitle("cosim_json");
     vis->SetChaseCamera(trackPoint, 6.0, 0.5);
     vis->Initialize();
     vis->AddLightDirectional();

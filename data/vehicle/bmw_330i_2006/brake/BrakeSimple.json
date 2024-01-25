@@ -1,0 +1,8 @@
+{
+  "Source": "This brake model is tuned to provide appropriate brake torque for the 2006 BMW 330i.",
+  "Name":                       "BMW 330i 2006 Simple Brake",
+  "Type":                       "Brake",
+  "Template":                   "BrakeSimple",
+
+  "Maximum Torque":             4000
+}
