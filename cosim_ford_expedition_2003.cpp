@@ -1,20 +1,21 @@
 // =============================================================================
 // Authors: Trevor Vidano
-// Date: 01/17/2024
+// Date: 01/26/2024
 // =============================================================================
 //
-// Main driver function for the Sedan full model cosimulated with Simulink. This
-// model expects Simulink to provide the driver inputs to the vehicle: steering
-// pinion angle, throttle percentage, and brake modulation for each wheel. This
-// choice of inputs enables advanced control functionality such as traction 
-// control, anti-lock braking, differential braking, etc. There are a large
-// number of outputs. They are sent to simulink as a vector for simplicity.
+// Main driver function for the Ford Expedition 2003 co-simulated with Simulink.
+// This model expects Simulink to provide the driver inputs to the vehicle: 
+// steering pinion angle, axle torque, and brake torque for each wheel. This
+// choice of inputs enables advanced control functionality to be implemented in
+// Simulink such as traction control, anti-lock braking, differential braking, 
+// etc. as well as powertrain models, driveline models, and brake models. There
+// are a large number of outputs. They are sent to simulink as a vector for 
+// simplicity.
 //
-// The actuators are very simple. The steering actuator is position-driven. The
-// input is the angle of the pinion, which is then converted to linear
-// displacement of the rack. The motor throttle command is used by the powertrain
-// model. The brake commands are modulation (0-1) to either the clutch model or 
-// a percentage of the maximum brake torque when the brake is a torque actuator.
+// The steering actuator is position-driven. The input is the angle of the 
+// pinion, which is then converted to linear displacement of the rack. The motor
+// torque commands are sent to each wheel's axle. The brake commands are 
+// a torque applied in the opposite direction of the spindle's angular velocity.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -40,8 +41,6 @@
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
-#include "chrono_models/vehicle/sedan/Sedan.h"
-
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "chrono_cosimulation/ChCosimulation.h"
@@ -51,7 +50,6 @@
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
-using namespace chrono::vehicle::sedan;
 using namespace chrono::utils;
 using namespace chrono::cosimul;
 
@@ -62,35 +60,9 @@ class Vehicle_Model {
     virtual std::string ModelName() const = 0;
     virtual std::string VehicleJSON() const = 0;
     virtual std::string TireJSON() const = 0;
-    virtual std::string PowertrainJSON() const = 0;
+    // virtual std::string PowertrainJSON() const = 0;
     virtual double CameraDistance() const = 0;
     virtual ChContactMethod ContactMethod() const = 0;
-};
-
-class Sedan_Model : public Vehicle_Model {
-  public:
-    virtual std::string ModelName() const override { return "Sedan"; }
-    virtual std::string VehicleJSON() const override { return "sedan/vehicle/Sedan_Vehicle.json"; }
-    virtual std::string TireJSON() const override {
-        ////return "sedan/tire/Sedan_RigidTire.json";
-        return "sedan/tire/Sedan_TMeasyTire.json";
-        ////return "sedan/tire/Sedan_Pac02Tire.json";
-    }
-    virtual std::string PowertrainJSON() const override { return "sedan/powertrain/Sedan_SimpleMapPowertrain.json"; }
-    virtual double CameraDistance() const override { return 6.0; }
-    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
-};
-
-class Audi_Model : public Vehicle_Model {
-  public:
-    virtual std::string ModelName() const override { return "Audi"; }
-    virtual std::string VehicleJSON() const override { return "audi/json/audi_Vehicle.json"; }
-    virtual std::string TireJSON() const override {
-        return "audi/json/audi_Pac02Tire.json";
-    }
-    virtual std::string PowertrainJSON() const override { return "audi/json/Audi_SimpleMapPowertrain.json"; }
-    virtual double CameraDistance() const override { return 6.0; }
-    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
 class Expedition_Model : public Vehicle_Model {
@@ -100,15 +72,16 @@ class Expedition_Model : public Vehicle_Model {
     virtual std::string TireJSON() const override {
         return "ford_expedition_2003/tire/TMeasyTire.json";
     }
-    virtual std::string PowertrainJSON() const override { return "ford_expedition_2003/powertrain/SimpleCVTPowertrain.json"; }
+    // virtual std::string PowertrainJSON() const override { return "hmmwv/powertrain/HMMWV_SimpleCVTPowertrain.json"; }
     virtual double CameraDistance() const override { return 6.0; }
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-auto vehicle_model = Sedan_Model();
+auto vehicle_model = Expedition_Model();
 
 // JSON files for terrain.v
-std::string rigidterrain_file("terrain/RigidPlane.json");
+//std::string rigidterrain_file("terrain/RigidPlane.json");
+std::string rigidterrain_file("terrain/RigidPlane1p0.json");
 ////std::string rigidterrain_file("terrain/RigidMesh.json");
 ////std::string rigidterrain_file("terrain/RigidHeightMap.json");
 ////std::string rigidterrain_file("terrain/RigidSlope10.json");
@@ -125,14 +98,8 @@ VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;
 VisualizationType tire_vis_type = VisualizationType::MESH;
 
-// Collision type for chassis (PRIMITIVES, MESH, or NONE)
-CollisionType chassis_collision_type = CollisionType::NONE;
-
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
-
-// Contact method
-ChContactMethod contact_method = ChContactMethod::SMC;
 
 // Simulation step sizes
 // Here the step_size must be the same as the sampling period that is
@@ -142,10 +109,6 @@ double tire_step_size = 1e-4;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 20;  // FPS = 20
-
-// Debug logging
-bool debug_output = false;
-double debug_step_size = 1.0 / 1;  // FPS = 1
 
 // Lowpass filters for eliminating simulation artifacts in acceleration data.
 // The tire models used in this simulation are only valid up to moderate 
@@ -191,9 +154,10 @@ int main(int argc, char* argv[]) {
     car.SetWheelVisualizationType(wheel_vis_type);
     car.LockAxleDifferential(0, false);
 
-    // Create and initialize the powertrain system
-    auto powertrain = ReadPowertrainJSON(GetDataFile(vehicle_model.PowertrainJSON()));
-    car.InitializePowertrain(powertrain);
+    // No powertrain model is required since the axle torques come from the 
+    // Cosimulation interface.
+    // auto powertrain = ReadPowertrainJSON(GetDataFile(vehicle_model.PowertrainJSON()));
+    // car.InitializePowertrain(powertrain);
 
     // Create and initialize the tires
     for (auto& axle : car.GetAxles()) {
@@ -228,7 +192,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle Irrlicht interface
     auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
-    vis->SetWindowTitle("cosim_json");
+    vis->SetWindowTitle("cosim_ford_expedition_2003");
     vis->SetChaseCamera(trackPoint, 6.0, 0.5);
     vis->Initialize();
     vis->AddLightDirectional();
@@ -266,11 +230,9 @@ int main(int argc, char* argv[]) {
     // Create a cosimulation interface and exchange data with Simulink.
     try {
         // Prepare the two column vectors of data that will be swapped back 
-        // and forth between Chrono and Simulink. In detail we will:
-        // - receive 6 variables from Simulink (steering, throttle, brake)
-        // - send  variables to Simulink.
-        int num_in = 6;
-        int num_out = 39;
+        // and forth between Chrono and Simulink.
+        int num_in = 9;
+        int num_out = 43;
         ChVectorDynamic<double> data_in(num_in);
         ChVectorDynamic<double> data_out(num_out);
         data_in.setZero();
@@ -296,15 +258,6 @@ int main(int argc, char* argv[]) {
         while (vis->Run()) {
             // A) ----------------- ADVANCE THE Chrono SIMULATION
 
-            // Render scene and output POV-Ray data
-            if (step_number % render_steps == 0) {
-                vis->BeginScene();
-                vis->Render();
-                vis->EndScene();
-
-                render_frame++;
-            }
-
             // Get driver inputs
             DriverInputs driver_inputs = driver.GetInputs();
 
@@ -321,11 +274,18 @@ int main(int argc, char* argv[]) {
                 terrain.Synchronize(my_time);
                 car.Synchronize(my_time, driver_inputs, terrain);
 
+                // Override driveline torque application.
+                car.GetDriveline()->GetDriveshaft()->SetAppliedTorque(0.0);
+                car.GetSuspension(0)->GetAxle(LEFT)->SetAppliedTorque(-data_in(1));
+                car.GetSuspension(0)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(2));
+                car.GetSuspension(1)->GetAxle(LEFT)->SetAppliedTorque(-data_in(3));
+                car.GetSuspension(1)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(4));
+
                 // Override individual brake actuation.
-                car.GetBrake(0, LEFT)->Synchronize(data_in(2));
-                car.GetBrake(0, RIGHT)->Synchronize(data_in(3));
-                car.GetBrake(1, LEFT)->Synchronize(data_in(4));
-                car.GetBrake(1, RIGHT)->Synchronize(data_in(5));
+                car.GetBrake(0, LEFT)->Synchronize(data_in(5));
+                car.GetBrake(0, RIGHT)->Synchronize(data_in(6));
+                car.GetBrake(1, LEFT)->Synchronize(data_in(7));
+                car.GetBrake(1, RIGHT)->Synchronize(data_in(8));
 
                 // Advance simulation for one timestep for all modules
                 driver.Advance(step_size);
@@ -344,6 +304,15 @@ int main(int argc, char* argv[]) {
                 acc_z = az_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).z());
             }
             step_number++;
+
+            // Render scene and output POV-Ray data
+            if (step_number % render_steps == 0) {
+                vis->BeginScene();
+                vis->Render();
+                vis->EndScene();
+
+                render_frame++;
+            }
 
             // B) ----------------- SYNCHRONIZATION
 
@@ -418,6 +387,20 @@ int main(int argc, char* argv[]) {
             double max_angle = car.GetMaxSteeringAngle();
             data_out(38) = driver.GetSteering() / max_angle;
 
+            // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
+            ChVector<> wheel_normal = car.GetWheel(0,LEFT)->GetState().rot.GetYaxis();
+            ChVector<> normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(39) = std::atan2(normal.x(), normal.y());
+            wheel_normal = car.GetWheel(0,RIGHT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(40) = std::atan2(normal.x(), normal.y());
+            wheel_normal = car.GetWheel(1,LEFT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(41) = std::atan2(normal.x(),normal.y());
+            wheel_normal = car.GetWheel(1,RIGHT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(42) = std::atan2(normal.x(),normal.y());
+
             cosim_interface.SendData(my_time, data_out);  // --> to Simulink
 
             // B.2) - RECEIVE data
@@ -425,7 +408,6 @@ int main(int argc, char* argv[]) {
 
             // - Update the Chrono system with the data received from Simulink.
             driver.SetSteering(data_in(0) / max_angle);
-            driver.SetThrottle(data_in(1));
             driver.SetBraking(0.); // use no braking at this point, it is overriden in the while loop.
 
         }

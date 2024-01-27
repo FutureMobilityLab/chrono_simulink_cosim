@@ -18,8 +18,9 @@
   },
 
   "RSD":
+  // Stiffnesses come from "Real-time dynamic simulation of vehicles with electronic stability control: Modeling and Validation"
   {
-    "Spring Coefficient":        17000,
+    "Spring Coefficient":        125000,
     "Damping Coefficient":        10
   }
 }

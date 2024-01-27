@@ -15,7 +15,7 @@
     "Roundness of Cross Section": 0.1
   },
 
-  "Coefficient of Friction": 0.78,
+  "Coefficient of Friction": 1.0,
 
   "Rolling Resistance Coefficients": [ 0.015, 0.015 ],
 

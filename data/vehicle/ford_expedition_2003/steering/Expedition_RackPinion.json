@@ -14,7 +14,10 @@
 
   "Pinion":
   {
-    "Radius":                   0.1,
-    "Maximum Angle":            0.9
+  // Tuned so that the ratio between the pinion angle and the average of the
+  // front left and right steer angles is 20. Note that this ratio is a function
+  // of suspension deflection, and is nonlinear.
+    "Radius":                   0.0635,
+    "Maximum Angle (deg)":     15.0
   }
 }

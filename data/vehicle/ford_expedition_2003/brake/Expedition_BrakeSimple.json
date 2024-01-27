@@ -1,0 +1,10 @@
+// This brake is used to provide access to brake torque applied to
+// each wheel. The maximum torque must be set to 1 to ensure proper
+// application of torque in N*m.
+{
+  "Name":                       "Expedition Simple Brake",
+  "Type":                       "Brake",
+  "Template":                   "BrakeSimple",
+
+  "Maximum Torque":             1
+}
