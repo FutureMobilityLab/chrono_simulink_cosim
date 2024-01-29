@@ -29,7 +29,7 @@
   // ------------------------------------------------
   // Load index specification.
   // Takes priority over "bearing capacity" (used only if a full parameterization not provided)
-  
+  // Bridgestone Dueller LX 2 P265/70R17 has a load index of 115.
   "Load Index": 115, //
   
   // ------------------------------------------------

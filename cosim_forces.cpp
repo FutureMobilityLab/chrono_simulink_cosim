@@ -87,15 +87,8 @@ bool contact_vis = false;
 double step_size = 1e-3;
 double tire_step_size = 1e-4;
 
-// Simulation end time
-double t_end = 1000;
-
 // Time interval between two render frames
 double render_step_size = 1.0 / 20;  // FPS = 20
-
-// Debug logging
-bool debug_output = false;
-double debug_step_size = 1.0 / 1;  // FPS = 1
 
 // Lowpass filters for eliminating simulation artifacts in acceleration data.
 // The tire models used in this simulation are only valid up to moderate 
@@ -202,11 +195,6 @@ int main(int argc, char* argv[]) {
     // Initialize values for simulation loop.
     // ------------------------
 
-    if (debug_output) {
-        GetLog() << "\n\n============ System Configuration ============\n";
-        car.LogHardpointLocations();
-    }
-
     car.GetVehicle().LogSubsystemTypes();
     std::cout << "\nVehicle mass: " << car.GetVehicle().GetMass() << std::endl;
     std::cout << "\nWheelbase: " << car.GetVehicle().GetWheelbase() << std::endl;
@@ -215,16 +203,10 @@ int main(int argc, char* argv[]) {
 
     // Number of simulation steps between miscellaneous events
     int render_steps = (int)std::ceil(render_step_size / step_size);
-    int debug_steps = (int)std::ceil(debug_step_size / step_size);
 
     // Initialize simulation frame counters
     int step_number = 0;
     int render_frame = 0;
-
-    if (contact_vis) {
-        vis->SetSymbolScale(1e-4);
-        vis->EnableContactDrawing(ContactsDrawMode::CONTACT_FORCES);
-    }
 
     // Enabling realtime attempts to make the simulation run at real time, even if
     // the simulation can run faster.
@@ -232,11 +214,9 @@ int main(int argc, char* argv[]) {
 
     try {
         // Prepare the two column vectors of data that will be swapped back 
-        // and forth between Chrono and Simulink. In detail we will:
-        // - receive 6 variables from Simulink (steering, throttle, brake)
-        // - send  variables to Simulink.
-        int num_in = 6;
-        int num_out = 39;
+        // and forth between Chrono and Simulink.
+        int num_in = 9;
+        int num_out = 55;
         ChVectorDynamic<double> data_in(num_in);
         ChVectorDynamic<double> data_out(num_out);
         data_in.setZero();
@@ -262,22 +242,6 @@ int main(int argc, char* argv[]) {
         while (vis->Run()) {
             // A) ----------------- ADVANCE THE Chrono SIMULATION
 
-            // Render scene and output POV-Ray data
-            if (step_number % render_steps == 0) {
-                vis->BeginScene();
-                vis->Render();
-                vis->EndScene();
-
-                render_frame++;
-            }
-
-            // Debug logging
-            if (debug_output && step_number % debug_steps == 0) {
-                GetLog() << "\n\n============ System Information ============\n";
-                GetLog() << "Time = " << my_time << "\n\n";
-                car.DebugLog(OUT_SPRINGS | OUT_SHOCKS | OUT_CONSTRAINTS);
-            }
-
             // Get driver inputs
             DriverInputs driver_inputs = driver.GetInputs();
 
@@ -292,11 +256,18 @@ int main(int argc, char* argv[]) {
                 terrain.Synchronize(my_time);
                 car.Synchronize(my_time, driver_inputs, terrain);
 
+                // Override driveline torque application.
+                car.GetVehicle().GetDriveline()->GetDriveshaft()->SetAppliedTorque(0.0);
+                car.GetVehicle().GetSuspension(0)->GetAxle(LEFT)->SetAppliedTorque(-data_in(1));
+                car.GetVehicle().GetSuspension(0)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(2));
+                car.GetVehicle().GetSuspension(1)->GetAxle(LEFT)->SetAppliedTorque(-data_in(3));
+                car.GetVehicle().GetSuspension(1)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(4));
+
                 // Override individual brake actuation.
-                car.GetVehicle().GetBrake(0, LEFT)->Synchronize(data_in(2));
-                car.GetVehicle().GetBrake(0, RIGHT)->Synchronize(data_in(3));
-                car.GetVehicle().GetBrake(1, LEFT)->Synchronize(data_in(4));
-                car.GetVehicle().GetBrake(1, RIGHT)->Synchronize(data_in(5));
+                car.GetVehicle().GetBrake(0, LEFT)->Synchronize(data_in(5));
+                car.GetVehicle().GetBrake(0, RIGHT)->Synchronize(data_in(6));
+                car.GetVehicle().GetBrake(1, LEFT)->Synchronize(data_in(7));
+                car.GetVehicle().GetBrake(1, RIGHT)->Synchronize(data_in(8));
 
                 // Advance simulation for one timestep for all modules
                 driver.Advance(step_size);
@@ -315,6 +286,15 @@ int main(int argc, char* argv[]) {
                 acc_z = az_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).z());
             }
             step_number++;
+
+            // Render scene and output POV-Ray data
+            if (step_number % render_steps == 0) {
+                vis->BeginScene();
+                vis->Render();
+                vis->EndScene();
+
+                render_frame++;
+            }
 
             // B) ----------------- SYNCHRONIZATION
 
@@ -373,21 +353,52 @@ int main(int argc, char* argv[]) {
             data_out(28) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
             data_out(29) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
 
+            // Longitudinal tire forces in the tire frame.
+            data_out(30) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(31) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(32) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(33) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+            
+            // Lateral tire forces in the tire frame.
+            data_out(34) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(35) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(36) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(37) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.y();
+            
+            // Vertical tire forces in the tire frame.
+            data_out(38) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(39) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(40) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(41) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.z();
+
             // Wheel torque applied from driveline. (checked)
-            data_out(30) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, LEFT);
-            data_out(31) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, RIGHT);
-            data_out(32) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, LEFT);
-            data_out(33) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, RIGHT);
+            data_out(42) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, LEFT);
+            data_out(43) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, RIGHT);
+            data_out(44) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, LEFT);
+            data_out(45) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, RIGHT);
 
             // Wheel torque applied from brakes. (checked)
-            data_out(34) = car.GetVehicle().GetBrake(0, LEFT)->GetBrakeTorque();
-            data_out(35) = car.GetVehicle().GetBrake(0, RIGHT)->GetBrakeTorque();
-            data_out(36) = car.GetVehicle().GetBrake(1, LEFT)->GetBrakeTorque();
-            data_out(37) = car.GetVehicle().GetBrake(1, RIGHT)->GetBrakeTorque();
+            data_out(46) = car.GetVehicle().GetBrake(0, LEFT)->GetBrakeTorque();
+            data_out(47) = car.GetVehicle().GetBrake(0, RIGHT)->GetBrakeTorque();
+            data_out(48) = car.GetVehicle().GetBrake(1, LEFT)->GetBrakeTorque();
+            data_out(49) = car.GetVehicle().GetBrake(1, RIGHT)->GetBrakeTorque();
 
             // Steering pinion angle.
-            double max_angle = car.GetVehicle().GetMaxSteeringAngle();
-            data_out(38) = driver.GetSteering() / max_angle;
+            data_out(50) = driver.GetSteering();
+
+            // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
+            ChVector<> wheel_normal = car.GetVehicle().GetWheel(0,LEFT)->GetState().rot.GetYaxis();
+            ChVector<> normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(51) = std::atan2(normal.x(), normal.y());
+            wheel_normal = car.GetVehicle().GetWheel(0,RIGHT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(52) = std::atan2(normal.x(), normal.y());
+            wheel_normal = car.GetVehicle().GetWheel(1,LEFT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(53) = std::atan2(normal.x(),normal.y());
+            wheel_normal = car.GetVehicle().GetWheel(1,RIGHT)->GetState().rot.GetYaxis();
+            normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            data_out(54) = std::atan2(normal.x(),normal.y());
 
             cosim_interface.SendData(my_time, data_out);  // --> to Simulink
 
@@ -395,8 +406,7 @@ int main(int argc, char* argv[]) {
             cosim_interface.ReceiveData(sim_time, data_in);  // <-- from Simulink
 
             // - Update the Chrono system with the data received from Simulink.
-            driver.SetSteering(data_in(0) / max_angle);
-            driver.SetThrottle(data_in(1));
+            driver.SetSteering(data_in(0));
             driver.SetBraking(0.); // use no braking at this point.
         }
     } catch (ChExceptionSocket exception) {

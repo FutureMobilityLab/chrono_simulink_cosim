@@ -105,7 +105,7 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 // Here the step_size must be the same as the sampling period that is
 // entered in the Simulink Cosimulation block.
 double step_size = 1e-3;
-double tire_step_size = 1e-4;
+double tire_step_size = 1e-3;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 20;  // FPS = 20
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
         // Prepare the two column vectors of data that will be swapped back 
         // and forth between Chrono and Simulink.
         int num_in = 9;
-        int num_out = 43;
+        int num_out = 55;
         ChVectorDynamic<double> data_in(num_in);
         ChVectorDynamic<double> data_out(num_out);
         data_in.setZero();
@@ -371,35 +371,52 @@ int main(int argc, char* argv[]) {
             data_out(28) = car.GetAxle(1)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
             data_out(29) = car.GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
 
+            // Longitudinal tire forces in the tire frame.
+            data_out(30) = car.GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(31) = car.GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(32) = car.GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.x();
+            data_out(33) = car.GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+            
+            // Lateral tire forces in the tire frame.
+            data_out(34) = car.GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(35) = car.GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(36) = car.GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.y();
+            data_out(37) = car.GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.y();
+            
+            // Vertical tire forces in the tire frame.
+            data_out(38) = car.GetAxle(0)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(39) = car.GetAxle(0)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(40) = car.GetAxle(1)->GetWheel(LEFT)->GetTire()->ReportTireForce(&terrain).force.z();
+            data_out(41) = car.GetAxle(1)->GetWheel(RIGHT)->GetTire()->ReportTireForce(&terrain).force.z();
+
             // Wheel torque applied from driveline. (checked)
-            data_out(30) = car.GetDriveline()->GetSpindleTorque(0, LEFT);
-            data_out(31) = car.GetDriveline()->GetSpindleTorque(0, RIGHT);
-            data_out(32) = car.GetDriveline()->GetSpindleTorque(1, LEFT);
-            data_out(33) = car.GetDriveline()->GetSpindleTorque(1, RIGHT);
+            data_out(42) = car.GetDriveline()->GetSpindleTorque(0, LEFT);
+            data_out(43) = car.GetDriveline()->GetSpindleTorque(0, RIGHT);
+            data_out(44) = car.GetDriveline()->GetSpindleTorque(1, LEFT);
+            data_out(45) = car.GetDriveline()->GetSpindleTorque(1, RIGHT);
 
             // Wheel torque applied from brakes. (checked)
-            data_out(34) = car.GetBrake(0, LEFT)->GetBrakeTorque();
-            data_out(35) = car.GetBrake(0, RIGHT)->GetBrakeTorque();
-            data_out(36) = car.GetBrake(1, LEFT)->GetBrakeTorque();
-            data_out(37) = car.GetBrake(1, RIGHT)->GetBrakeTorque();
+            data_out(46) = car.GetBrake(0, LEFT)->GetBrakeTorque();
+            data_out(47) = car.GetBrake(0, RIGHT)->GetBrakeTorque();
+            data_out(48) = car.GetBrake(1, LEFT)->GetBrakeTorque();
+            data_out(49) = car.GetBrake(1, RIGHT)->GetBrakeTorque();
 
             // Steering pinion angle.
-            double max_angle = car.GetMaxSteeringAngle();
-            data_out(38) = driver.GetSteering() / max_angle;
+            data_out(50) = driver.GetSteering();
 
             // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
             ChVector<> wheel_normal = car.GetWheel(0,LEFT)->GetState().rot.GetYaxis();
             ChVector<> normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(39) = std::atan2(normal.x(), normal.y());
+            data_out(51) = std::atan2(normal.x(), normal.y());
             wheel_normal = car.GetWheel(0,RIGHT)->GetState().rot.GetYaxis();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(40) = std::atan2(normal.x(), normal.y());
+            data_out(52) = std::atan2(normal.x(), normal.y());
             wheel_normal = car.GetWheel(1,LEFT)->GetState().rot.GetYaxis();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(41) = std::atan2(normal.x(),normal.y());
+            data_out(53) = std::atan2(normal.x(),normal.y());
             wheel_normal = car.GetWheel(1,RIGHT)->GetState().rot.GetYaxis();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(42) = std::atan2(normal.x(),normal.y());
+            data_out(54) = std::atan2(normal.x(),normal.y());
 
             cosim_interface.SendData(my_time, data_out);  // --> to Simulink
 
@@ -407,7 +424,7 @@ int main(int argc, char* argv[]) {
             cosim_interface.ReceiveData(sim_time, data_in);  // <-- from Simulink
 
             // - Update the Chrono system with the data received from Simulink.
-            driver.SetSteering(data_in(0) / max_angle);
+            driver.SetSteering(data_in(0));
             driver.SetBraking(0.); // use no braking at this point, it is overriden in the while loop.
 
         }
