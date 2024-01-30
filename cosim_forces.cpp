@@ -238,12 +238,36 @@ int main(int argc, char* argv[]) {
         double my_time = 0;
         double sim_time = 0;
 
+        // Simulate the first 5 seconds before so that the vehicle begins
+        // at rest and at steady-state (or at least close to it).
+        // Get driver inputs
+        DriverInputs driver_inputs = driver.GetInputs();
+        const double steady_state_time = 5.0;
+        while (my_time < steady_state_time) {
+            // Update modules (process inputs from other modules)
+            driver.Synchronize(my_time);
+            terrain.Synchronize(my_time);
+            car.Synchronize(my_time, driver_inputs, terrain);
+            
+            // Advance simulation for one timestep for all modules
+            driver.Advance(step_size);
+            terrain.Advance(step_size);
+            car.Advance(step_size);
+            vis->Advance(step_size);
+            
+            // Increment chrono clock.
+            my_time += step_size;
+        }
+
+        // Reset chrono clock after reaching steady-state.
+        my_time = 0.0;
+
         // 4) Run the co-simulation
         while (vis->Run()) {
             // A) ----------------- ADVANCE THE Chrono SIMULATION
 
             // Get driver inputs
-            DriverInputs driver_inputs = driver.GetInputs();
+            driver_inputs = driver.GetInputs();
 
             // Initialize variables that will be filtered.
             double acc_x(0);
@@ -276,7 +300,7 @@ int main(int argc, char* argv[]) {
                 vis->Advance(step_size);
 
                 // Increment chrono clock.
-                my_time += step_size;
+                my_time = car.GetVehicle().GetChTime() - steady_state_time;
 
                 // Get signals that will be filtered.
                 Coordsys chassis_frame = car.GetChassisBody()->coord;
