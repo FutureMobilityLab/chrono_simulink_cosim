@@ -130,6 +130,7 @@ add_executable(cosim_simple cosim_simple.cpp)
 add_executable(cosim_forces cosim_forces.cpp)
 add_executable(cosim_json cosim_json.cpp)
 add_executable(cosim_ford_expedition_2003 cosim_ford_expedition_2003.cpp)
+add_executable(cosim_suspensionrig cosim_suspensionrig.cpp)
 
 #--------------------------------------------------------------
 # Set properties for your executable target
@@ -155,10 +156,15 @@ target_compile_options(cosim_json PUBLIC ${CHRONO_CXX_FLAGS})
 target_link_options(cosim_json PUBLIC ${CHRONO_LINKER_FLAGS})
 target_compile_features(cosim_json PUBLIC "cxx_std_17")
 
-target_compile_definitions(cosim_json PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(cosim_json PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(cosim_json PUBLIC ${CHRONO_LINKER_FLAGS})
+target_compile_definitions(cosim_ford_expedition_2003 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(cosim_ford_expedition_2003 PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(cosim_ford_expedition_2003 PUBLIC ${CHRONO_LINKER_FLAGS})
 target_compile_features(cosim_ford_expedition_2003 PUBLIC "cxx_std_17")
+
+target_compile_definitions(cosim_suspensionrig PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(cosim_suspensionrig PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(cosim_suspensionrig PUBLIC ${CHRONO_LINKER_FLAGS})
+target_compile_features(cosim_suspensionrig PUBLIC "cxx_std_17")
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
@@ -171,6 +177,8 @@ target_link_libraries(cosim_forces ${CHRONO_LIBRARIES})
 target_link_libraries(cosim_json ${CHRONO_LIBRARIES})
 
 target_link_libraries(cosim_ford_expedition_2003 ${CHRONO_LIBRARIES})
+
+target_link_libraries(cosim_suspensionrig ${CHRONO_LIBRARIES})
 
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
