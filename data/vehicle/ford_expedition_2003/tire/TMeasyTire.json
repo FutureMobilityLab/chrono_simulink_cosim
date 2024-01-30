@@ -5,12 +5,12 @@
 
   // ------------------------------------------------
   // Tire design (REQUIRED)
-
+  // Bridgestone Dueller LX 2 P265/70R17 has a load index of 115.
   "Design": {
     "Unloaded Radius [m]": 0.397,
     "Mass [kg]": 18.32513,
     "Inertia [kg.m2]": [ 1.0, 2.0, 1.0 ],
-    "Width [m]": 0.2642,
+    "Width [m]": 0.265,
     "Rim Radius [m]": 0.2159,
     "Roundness of Cross Section": 0.1
   },
