@@ -1,0 +1,24 @@
+{
+  "Name":                       "Ford Taurus 1994 Rack-Pinion Steering",
+  "Type":                       "Steering",
+  "Template":                   "RackPinion",
+
+  // NADS: steeringRack
+  "Steering Link":
+  {
+    "Mass":                     2.58400,
+    "COM":                      0,
+    "Inertia":                  [0.12020, 0.12020, 0.06166],
+    "Radius":                   0.03,
+    // NADS: Distance between chassis-side of tie rods.
+    "Length":                   0.57785
+  },
+
+  "Pinion":
+  {
+  // Tuned so that the maximum steer angle (angle between tire plane and chassis y axis)
+  // is capable of reaching ~0.6 rad = ~ 35 deg.
+    "Radius":                   1.0,
+    "Maximum Angle (deg)":      4.8
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "Name":     "Ford Taurus 1994 chassis",
+  "Type":     "Chassis",
+  "Template": "RigidChassis",
+
+  "Components":
+  [
+   {
+     "Centroidal Frame":    {
+                              "Location":    [0, 0, 0], 
+                              "Orientation": [1, 0, 0, 0]
+                            },
+     "Mass":                1492,
+     "Moments of Inertia":  [437.404, 2499.011, 2612.43],
+     "Products of Inertia": [0, 60, 0],
+     "Void":                false
+   }
+  ],
+
+  "Driver Position":
+  {
+    "Location":     [0, 0.5, 1.2],
+    "Orientation":  [1, 0, 0, 0]
+  },
+
+  "Visualization": {
+
+    "Primitives": [
+        {
+            "Type": "BOX",
+            "Location": [-1.492, 0.0, 0.4 ],
+            "Orientation": [ 1, 0, 0, 0 ],
+            "Dimensions": [ 3.0 , 1.2, 0.2 ]
+        }
+    ]
+}
+}

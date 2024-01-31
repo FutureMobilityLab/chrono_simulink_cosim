@@ -1,0 +1,55 @@
+{
+  "Name": "NADS Vehicle - Ford Taurus 1994",
+  "Type": "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis": {
+    "Input File": "ford_taurus_1994/Taurus_Chassis.json"
+  },
+
+  // The vehicle's COM is the origin. The suspension locations are specified w.r.t. 
+  // this origin.
+  "Axles": [
+    {
+      "Suspension Input File": "ford_taurus_1994/Taurus_FrontMacPhersonStrut.json",
+      "Suspension Location": [0, 0, 0],
+      "Steering Index": 0,
+      "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Left Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Antirollbar Input File": "ford_taurus_1994/Taurus_FrontAntirollBarRSD.json",
+      // Center on front spindle center of mass.
+      "Antirollbar Location": [ 0.96210, 0.00000, 0.24799 ]
+    },
+
+    {
+      "Suspension Input File": "ford_taurus_1994/Taurus_RearMacPhersonStrut.json",
+      "Suspension Location": [0, 0, 0],
+      "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
+      "Left Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Antirollbar Input File": "ford_taurus_1994/Taurus_RearAntirollBarRSD.json",
+      // Center on rear spindle center of mass.
+      "Antirollbar Location": [ -1.75149, 0.00000, 0.23891 ]
+    }
+  ],
+
+  "Steering Subsystems": [
+    {
+      "Input File": "ford_expedition_2003/steering/Expedition_RackPinion.json",
+      "Location": [0.78108, 0, -0.19742],
+      "Orientation": [ 1, 0, 0, 0 ]
+    }
+  ],
+
+  "Wheelbase": 3.0226,
+  "Minimum Turning Radius": 7.62,
+  "Maximum Steering Angle (deg)": 25,
+
+  "Driveline": {
+    "Input File": "ford_expedition_2003/driveline/Expedition_Driveline.json",
+    "Suspension Indexes": [ 0, 1 ]
+  }
+}

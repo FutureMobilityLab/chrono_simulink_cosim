@@ -1,0 +1,25 @@
+{
+  "Name":                       "Ford Taurus 1994 Front RSD Antirollbar",
+  "Type":                       "Antirollbar",
+  "Template":                   "AntirollBarRSD",
+
+  "Arm":
+  {
+    "Mass":                     1.0,
+    "Inertia":                  [1, 1, 1],
+    "Length":                   0.54610,
+    "Width":                    0.19050,
+    "Radius":                   0.02
+  },
+
+  "Droplink":
+  {
+    "Height":                   0.00000
+  },
+
+  "RSD":
+  {
+    "Spring Coefficient":        50000,
+    "Damping Coefficient":        10
+  }
+}
