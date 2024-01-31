@@ -5,16 +5,20 @@
 
   "Arm":
   {
-    "Mass":                     1.0,
+    // NADS: Sum of Rear Stabilizer mass and link mass.
+    "Mass":                     3.19329,
     "Inertia":                  [1, 1, 1],
+    // NADS: Rear Stabilizer half-length.
     "Length":                   0.54864,
+    // NADS: Rear Stabilizer bar distance from endpoint to bar centerpoint.
     "Width":                    0.20066,
     "Radius":                   0.02
   },
 
   "Droplink":
   {
-    "Height":                   0.00000
+    // NADS: Rear stabilizer bar link length.
+    "Height":                   0.21082
   },
 
   "RSD":

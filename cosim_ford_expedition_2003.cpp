@@ -77,7 +77,19 @@ class Expedition_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-auto vehicle_model = Expedition_Model();
+class Taurus_Model : public Vehicle_Model {
+  public:
+    virtual std::string ModelName() const override { return "Ford Taurus 1994"; }
+    virtual std::string VehicleJSON() const override { return "ford_taurus_1994/Vehicle_ford_taurus_1994.json"; }
+    virtual std::string TireJSON() const override {
+        // return "hmmwv/tire/HMMWV_Pac02Tire.json";
+        return "ford_expedition_2003/tire/TMeasyTire.json";
+    }
+    virtual double CameraDistance() const override { return 6.0; }
+    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
+};
+
+auto vehicle_model = Taurus_Model();
 
 // JSON files for terrain.v
 //std::string rigidterrain_file("terrain/RigidPlane.json");
@@ -87,9 +99,9 @@ std::string rigidterrain_file("terrain/RigidPlane1p0.json");
 ////std::string rigidterrain_file("terrain/RigidSlope10.json");
 ////std::string rigidterrain_file("terrain/RigidSlope20.json");
 
-// Initial vehicle location and orientation
+// Initial vehicle displacement above the ground.
 ChVector<> initLoc(0, 0, 1.0);
-ChQuaternion<> initRot(1, 0, 0, 0);
+ChQuaternion<> initRot = Q_from_Euler123({0.0, 0.0, 0.0});
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::MESH;
@@ -146,9 +158,9 @@ int main(int argc, char* argv[]) {
     // Create the vehicle system
     WheeledVehicle car(GetDataFile(vehicle_model.VehicleJSON()), vehicle_model.ContactMethod());
     car.Initialize(ChCoordsys<>(initLoc, initRot));
-    car.GetChassis()->SetFixed(false);
+    car.GetChassis()->SetFixed(true);
     car.SetChassisVisualizationType(chassis_vis_type);
-    car.SetChassisRearVisualizationType(chassis_vis_type);
+    //car.SetChassisRearVisualizationType(chassis_vis_type);
     car.SetSuspensionVisualizationType(suspension_vis_type);
     car.SetSteeringVisualizationType(steering_vis_type);
     car.SetWheelVisualizationType(wheel_vis_type);
@@ -258,25 +270,25 @@ int main(int argc, char* argv[]) {
         // at rest and at steady-state (or at least close to it).
         // Get driver inputs
         DriverInputs driver_inputs = driver.GetInputs();
-        const double steady_state_time = 5.0;
-        while (my_time < steady_state_time) {
-            // Update modules (process inputs from other modules)
-            driver.Synchronize(my_time);
-            terrain.Synchronize(my_time);
-            car.Synchronize(my_time, driver_inputs, terrain);
+        const double steady_state_time = 0.0;
+        // while (my_time < steady_state_time) {
+        //     // Update modules (process inputs from other modules)
+        //     driver.Synchronize(my_time);
+        //     terrain.Synchronize(my_time);
+        //     car.Synchronize(my_time, driver_inputs, terrain);
             
-            // Advance simulation for one timestep for all modules
-            driver.Advance(step_size);
-            terrain.Advance(step_size);
-            car.Advance(step_size);
-            vis->Advance(step_size);
+        //     // Advance simulation for one timestep for all modules
+        //     driver.Advance(step_size);
+        //     terrain.Advance(step_size);
+        //     car.Advance(step_size);
+        //     vis->Advance(step_size);
             
-            // Increment chrono clock.
-            my_time += step_size;
-        }
+        //     // Increment chrono clock.
+        //     my_time += step_size;
+        // }
 
-        // Reset chrono clock after reaching steady-state.
-        my_time = 0.0;
+        // // Reset chrono clock after reaching steady-state.
+        // my_time = 0.0;
 
         // 4) Run the co-simulation
         while (vis->Run()) {

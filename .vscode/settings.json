@@ -2,7 +2,7 @@
     "cmake.configureOnOpen": true,
     "C_Cpp.errorSquiggles": "enabled",
     "cmake.configureSettings": {
-        "Chrono_DIR":"C:\\Users\\15309\\Project_Chrono\\chrono_build\\cmake"},
+        "Chrono_DIR":"C:\\Users\\Trevor\\Project Chrono\\chrono_build\\cmake"},
     "cmake.defaultVariants": {
         "buildType": {
             "default": "release",

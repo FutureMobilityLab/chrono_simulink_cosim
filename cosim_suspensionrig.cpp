@@ -83,7 +83,8 @@ class Generic_STR_Setup : public STR_Setup {
   public:
     virtual std::string SuspensionRigJSON() const override { return "generic/suspensionTest/STR_example.json"; }
     virtual std::string VehicleJSON() const override { 
-        return "ford_expedition_2003/vehicle/Vehicle_ford_expedition_2003.json"; 
+        return "ford_taurus_1994/Vehicle_ford_taurus_1994.json";
+        // return "ford_expedition_2003/vehicle/Vehicle_ford_expedition_2003.json"; 
         // return "generic/vehicle/Vehicle_DoubleWishbones_ARB.json";
     }
     virtual std::string TireJSON() const override { return "ford_expedition_2003/tire/TMeasyTire.json"; }
@@ -91,7 +92,7 @@ class Generic_STR_Setup : public STR_Setup {
     virtual std::vector<int> TestAxles() const override { return {0}; }
     virtual std::vector<int> TestSubchassis() const override { return {}; }
     virtual std::vector<int> TestSteerings() const override { return {0}; }
-    virtual double InitRideHeight() const override { return -10.; } // 0.55
+    virtual double InitRideHeight() const override { return 0.7; } // 0.55
     virtual double PostLimit() const override { return 0.15; }
     virtual double CameraDistance() const override { return 2.0; }
 };
@@ -103,7 +104,7 @@ Generic_STR_Setup setup;
 
 // STR rig type
 enum class RigMode {PLATFORM, PUSHROD};
-RigMode rig_mode = RigMode::PLATFORM;
+RigMode rig_mode = RigMode::PUSHROD;
 
 // Specification of test rig inputs
 // enum class DriverMode {DATA_FILE, INTERACTIVE};
@@ -116,7 +117,7 @@ std::string out_dir = GetChronoOutputPath() + "SUSPENSION_TEST_RIG";
 double out_step_size = 1e-2;
 
 // Simulation step size
-double step_size = 1e-3;
+double step_size = 1e-4;
 
 // =============================================================================
 
@@ -277,6 +278,7 @@ int main(int argc, char* argv[]) {
 
         // Simulation loop
         while (vis->Run()) {
+            std::vector<int> i_axle = setup.TestAxles();
             // Advance simulation of the rig
             while (my_time < sim_time) {
                 // Overwrite driver commands and use cosimulation inputs.
@@ -302,28 +304,31 @@ int main(int argc, char* argv[]) {
 
             // Send data over cosimulation connection.
             // Spring forces.
-            data_out(0) = rig->GetVehicle().GetSuspension(0)->ReportSuspensionForce(LEFT).spring_force;
-            data_out(1) = rig->GetVehicle().GetSuspension(0)->ReportSuspensionForce(RIGHT).spring_force;
+            data_out(0) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(LEFT).spring_force;
+            data_out(1) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(RIGHT).spring_force;
 
             // Damper forces.
-            data_out(2) = rig->GetVehicle().GetSuspension(0)->ReportSuspensionForce(LEFT).shock_force;
-            data_out(3) = rig->GetVehicle().GetSuspension(0)->ReportSuspensionForce(RIGHT).shock_force;
+            data_out(2) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(LEFT).shock_force;
+            data_out(3) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(RIGHT).shock_force;
 
             // Camber angles.
-            data_out(4) = rig->GetVehicle().GetTire(0, LEFT)->GetCamberAngle();
-            data_out(5) = rig->GetVehicle().GetTire(0, RIGHT)->GetCamberAngle();
+            data_out(4) = rig->GetVehicle().GetTire(i_axle[0], LEFT)->GetCamberAngle();
+            data_out(5) = rig->GetVehicle().GetTire(i_axle[0], RIGHT)->GetCamberAngle();
 
             // Steer angles.
-            ChVector<> wheel_normal = rig->GetVehicle().GetWheel(0,LEFT)->GetState().rot.GetYaxis();
+            ChVector<> wheel_normal = rig->GetVehicle().GetWheel(i_axle[0],LEFT)->GetState().rot.GetYaxis();
             ChVector<> normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(6) = std::atan2(normal.x(), normal.y());
-            wheel_normal = rig->GetVehicle().GetWheel(0,RIGHT)->GetState().rot.GetYaxis();
+            wheel_normal = rig->GetVehicle().GetWheel(i_axle[0],RIGHT)->GetState().rot.GetYaxis();
             normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(7) = std::atan2(normal.x(), normal.y());
 
-            // Displacements.
-            data_out(8) = rig->GetActuatorDisp(0, LEFT);
-            data_out(9) = rig->GetActuatorDisp(0, RIGHT);
+            // Spindle vertical displacement.
+            double spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], LEFT).z();
+            double chassis_z = rig->GetVehicle().GetChassis()->GetPos().z();
+            data_out(8) = chassis_z - spindle_z;
+            spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], RIGHT).z();
+            data_out(9) = chassis_z - spindle_z;
 
             cosim_interface.SendData(my_time, data_out);  // --> to Simulink
 

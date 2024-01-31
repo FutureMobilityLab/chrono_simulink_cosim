@@ -16,38 +16,39 @@
    "Spindle" :
    {
      "Mass":                     1.103,
-     "COM":                      [0, -0.7979, 0.1199],
+     // NADS: use wheel center.
+     "COM":                      [0.98425, 0.78256, -0.27795],
      "Inertia":                  [0.000478, 0.000496, 0.000478],
      "Radius":                   0.1,
      "Width":                    0.02
    },
 
-   // NADS: spindle_fr
+   // NADS: spindle_fl
    "Upright":
    {
      "Mass":                     40.72400,
-     "COM":                      [0.96210, -0.75260, -0.24799],
+     "COM":                      [0.96210, 0.75260, -0.24799],
      "Inertia":                  [1.42733, 1.53816, 1.13923],
      "Radius":                   0.025
    },
 
-   // NADS: carm_fr
+   // NADS: carm_fl
    "Control Arm":
    {
-     "Mass":                     1.764,
-     "COM":                      [0.94139, -0.57264, -0.35763],
+     "Mass":                     1.76400,
+     "COM":                      [0.94139, 0.57264, -0.35763],
      "Inertia":                  [0.01695, 0.00010, 0.01695],
      "Radius":                   0.02,
      // Guessed from coordinate frame of carm_fr. x-axis determines rotational axis.
      // Front point is then a point 20 cm along the x-axis of carm_fr.
-     "Location Chassis Front":   [1.09170, -0.36095, -0.35763],
+     "Location Chassis Front":   [1.09170, 0.36095, -0.35763],
      // Assumed to be origin of carm_fr coordinate.
-     "Location Chassis Back":    [0.89852, -0.41275, -0.35763],
+     "Location Chassis Back":    [0.89852, 0.41275, -0.35763],
      // NADS: Spherical joint between carm_fr and spindle_fr (this is the r_i component).
-     "Location Upright":         [0.98425, -0.73025, -0.39573]
+     "Location Upright":         [0.98425, 0.73025, -0.39573]
    },
 
-   // NADS: pistonRod_fr
+   // NADS: pistonRod_fl
    "Strut":
    {
      "Mass":                     1.00000,
@@ -58,26 +59,26 @@
    // NADS: Guess: Front Suspension Lower Arm Strut
    "Tierod":
    {
-     "Location Chassis":         [0.78108, -0.28893, -0.19742],
-     "Location Upright":         [0.84451, -0.69063, -0.21793]
+     "Location Chassis":         [0.78108, 0.28893, -0.19742],
+     "Location Upright":         [0.84451, 0.69063, -0.21793]
    },
  
-   // NADS: Top/Bottom of pistonRod_fr
+   // NADS: Top/Bottom of pistonRod_fl
    "Spring":
    {
-     "Location Chassis":         [0.93104, -0.56039, 0.24404],
-     "Location Upright":         [0.98425, -0.57277, 0.03607],
+     "Location Chassis":         [0.93104, 0.56039, 0.24404],
+     "Location Upright":         [0.98425, 0.57277, 0.03607],
      // NADS: Average slope between endpoints of linear region of spring curve.
      "Spring Coefficient":       28196.08696,
-     // NADS: Displacement where spring curve is 0. (outside of linear region).
-     "Free Length" :             -0.09929
+     // NADS: Free length of the TSDA between chassis and spindle_fl.
+     "Free Length" :             0.37500
    },
  
-   // NADS: Top/Bottom of pistonRod_fr
+   // NADS: Top/Bottom of pistonRod_fl
    "Shock":
    {
-     "Location Chassis":         [0.93104, -0.56039, 0.24404],
-     "Location Upright":         [0.98425, -0.57277, 0.03607],
+     "Location Chassis":         [0.93104, 0.56039, 0.24404],
+     "Location Upright":         [0.98425, 0.57277, 0.03607],
      // NADS: Average slope between endpoints at +/- 1.0 m/s displacement rates (quite nonlinear).
      "Damping Coefficient":      832.85851
    },

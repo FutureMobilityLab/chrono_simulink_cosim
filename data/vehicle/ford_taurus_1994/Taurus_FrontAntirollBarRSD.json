@@ -5,21 +5,29 @@
 
   "Arm":
   {
-    "Mass":                     1.0,
+    // NADS: Sum of Front Stabilizer mass and link mass.
+    "Mass":                     3.55163,
     "Inertia":                  [1, 1, 1],
-    "Length":                   0.54610,
+    // NADS: Front Stabilizer half-length.
+    // "Length":                   0.54864,
+    // Need to modify locations. (see Vehicle_ford_taurus_1994.json).
+    "Length":                   0.73025,
+    // NADS: Front Stabilizer bar distance from endpoint to chassis mount.
     "Width":                    0.19050,
     "Radius":                   0.02
   },
 
   "Droplink":
   {
-    "Height":                   0.00000
+    // NADS: Front stabilizer bar mount length.
+    //"Height":                   0.26670
+    // Need to modify locations. (see Vehicle_ford_taurus_1994.json).
+    "Height":                    -0.11778
   },
 
   "RSD":
   {
     "Spring Coefficient":        50000,
-    "Damping Coefficient":        10
+    "Damping Coefficient":        100
   }
 }

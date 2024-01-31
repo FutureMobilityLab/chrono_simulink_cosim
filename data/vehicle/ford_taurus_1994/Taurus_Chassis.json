@@ -7,7 +7,8 @@
   [
    {
      "Centroidal Frame":    {
-                              "Location":    [0, 0, 0], 
+                              // Offset of chassis COM w.r.t. chassis reference frame.
+                              "Location":    [0.0, 0, 0.0], 
                               "Orientation": [1, 0, 0, 0]
                             },
      "Mass":                1492,
@@ -19,19 +20,13 @@
 
   "Driver Position":
   {
+    // Pos. and rot. of driver w.r.t. chassis reference frame.
     "Location":     [0, 0.5, 1.2],
     "Orientation":  [1, 0, 0, 0]
-  },
+  }//,
 
-  "Visualization": {
-
-    "Primitives": [
-        {
-            "Type": "BOX",
-            "Location": [-1.492, 0.0, 0.4 ],
-            "Orientation": [ 1, 0, 0, 0 ],
-            "Dimensions": [ 3.0 , 1.2, 0.2 ]
-        }
-    ]
-}
+  // "Visualization":
+  // {
+  //   "Mesh":  "sedan/sedan_chassis_vis.obj"
+  // }
 }
