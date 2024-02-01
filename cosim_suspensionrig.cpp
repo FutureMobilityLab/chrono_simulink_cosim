@@ -44,17 +44,17 @@ using namespace chrono::cosimul;
 class CosimSuspensionTestRig : public ChDriverSTR {
   public:
     /// Set the value for the driver left post displacement input.
-    void SetDisplacementLeft(int axle, double val, double min_val = -1, double max_val = 1) {
+    void SetDisplacementLeft(int axle, double val, double min_val = -10, double max_val = 10) {
         m_displLeft[axle] = ChClamp(val, min_val, max_val);
     }
 
     /// Set the value for the driver right post displacement input.
-    void SetDisplacementRight(int axle, double val, double min_val = -1, double max_val = 1) {
+    void SetDisplacementRight(int axle, double val, double min_val = -10, double max_val = 10) {
         m_displRight[axle] = ChClamp(val, min_val, max_val);
     }
     
     /// Set the value for the driver steering input.
-    void SetSteering(double val, double min_val = -1, double max_val = 1) {
+    void SetSteering(double val, double min_val = -10, double max_val = 10) {
         m_steering = ChClamp(val, min_val, max_val);
     }
 };
@@ -89,11 +89,11 @@ class Generic_STR_Setup : public STR_Setup {
     }
     virtual std::string TireJSON() const override { return "ford_expedition_2003/tire/TMeasyTire.json"; }
     virtual std::string DataDriverFile() const override { return "generic/suspensionTest/ST_inputs.dat"; }
-    virtual std::vector<int> TestAxles() const override { return {0}; }
+    virtual std::vector<int> TestAxles() const override { return {1}; }
     virtual std::vector<int> TestSubchassis() const override { return {}; }
     virtual std::vector<int> TestSteerings() const override { return {0}; }
-    virtual double InitRideHeight() const override { return 0.7; } // 0.55
-    virtual double PostLimit() const override { return 0.15; }
+    virtual double InitRideHeight() const override { return -0.001; } // 0.55
+    virtual double PostLimit() const override { return 1.0; }
     virtual double CameraDistance() const override { return 2.0; }
 };
 
@@ -117,7 +117,7 @@ std::string out_dir = GetChronoOutputPath() + "SUSPENSION_TEST_RIG";
 double out_step_size = 1e-2;
 
 // Simulation step size
-double step_size = 1e-4;
+double step_size = 1e-3;
 
 // =============================================================================
 
