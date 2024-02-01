@@ -1,11 +1,9 @@
-{// This is a more appropriate template for the Ford Taurus rear suspension than the 
- // MacPherson Strut. However, this suspension template does not sufficiently constrain
- // the knuckle. The inclination angle is left mostly unconstrained. To fix this an 
- // additional cylindrical or prismatic joint should be used to capture the constraints
- // imposed by the strut in the rear suspension.
-  "Name":                       "Ford Taurus 1994 Three Link Independent Rear Suspension",
+{// This model would most closely match the rear suspension model used in Salaani's
+// Dissertation if there were a cylindrical or prismatic joint to represent the
+// constraints applied by the MacPherson Strut.
+  "Name":                       "Ford Taurus 1994 DoubleWishbone Rear",
   "Type":                       "Suspension",
-  "Template":                   "ThreeLinkIRS",
+  "Template":                   "DoubleWishbone",
 
   // Alignment angles from Salaani's Dissertation: "Development And Validation of 
   // A Vehicle Model For The National Advanced Driving Simulator". They are the averages
@@ -28,56 +26,63 @@
   },
 
   // NADS: spindle_rl
-  "Trailing Arm":
+  "Upright":
   {
     "Mass":                     36.55000,
     "COM":                      [-1.75149, 0.74129, -0.23891],
-    "Inertia":                  [1.14012, 1.43048, 0.83817],
-    "Radius":                   0.02,
-    // NADS: Guess: Rear Suspension Tension Strut (chassis side).
-    "Location Chassis":         [-1.19856, 0.54451, -0.32906],
-    // NADS: Guess: Rear Suspension Tension Strut (knuckle side).
-    //"Location Spindle":         [-1.71291, 0.67469, -0.39732]
-    "Location Spindle":         [-1.76355, 0.87693, -0.26807]
+    "Moments of Inertia":       [1.14012, 1.43048, 0.83817],
+    "Products of Inertia":      [0, 0, 0],
+    "Radius":                   0.02
   },
 
   // NADS: carm_rlr
-  "Upper Link":
+  "Upper Control Arm":
   {
     "Mass":                     1.23100,
     "COM":                      [-1.84468, 0.37465, -0.31254],
-    "Inertia":                  [0.05876, 0.00010, 0.05876],
+    "Moments of Inertia":       [0.05876, 0.00010, 0.05876],
+    "Products of Inertia":      [0, 0, 0],
     "Radius":                   0.01,
-    "Location Chassis":         [-1.84468, 0.07620, -0.31794],
+    "Location Chassis Front":   [-1.74468, 0.07620, -0.31794],
+    "Location Chassis Back":    [-1.84468, 0.07620, -0.31794],
     // NADS: Spherical joint r_i between carm_rlr and spindle_rr.
-    "Location Arm":             [-1.84490, 0.67310, -0.32906],
-    "Universal Joint Axis":     [1, 1, 1]
+    "Location Upright":         [-1.84490, 0.67310, -0.32906]
   },
 
   // NADS: carm_rlf
-  "Lower Link":
+  "Lower Control Arm":
   {
     "Mass":                     1.23100,
     "COM":                      [-1.63671, 0.37465, -0.31239],
-    "Inertia":                  [0.05876, 0.00010, 0.05876],
+    "Moments of Inertia":       [0.05876, 0.00010, 0.05876],
+    "Products of Inertia":      [0, 0, 0],
     "Radius":                   0.01,
-    "Location Chassis":         [-1.63671, 0.07620, -0.31477],
-    // NADS: Spherical joint r_i between carm_rlf and spindle_rr.
-    "Location Arm":             [-1.63693, 0.67310, -0.31953],
-    "Universal Joint Axis":     [1, 1, 1]
+    "Location Chassis Front":   [-1.53671, 0.07620, -0.31477],
+    "Location Chassis Back":    [-1.63671, 0.07620, -0.31477],
+    "Location Upright":         [-1.63693, 0.67310, -0.31953]
   },
 
-  // NADS: Top/Bottom of pistonRod_rl
+  // NADS: Rear Suspension Tension Strut.
+  "Tierod":
+  {
+    "Location Chassis":         [-1.19856, 0.54451, -0.32906],
+    "Location Upright":         [-1.72129, 0.67469, -0.39732]
+  },
+ 
+  // NADS: Top/Bottom of pistonRod_rr
   "Spring":
   {
     "Location Chassis":         [-1.74307, 0.56706, 0.33928],
     "Location Arm":             [-1.76355, 0.61849, 0.02837],
+    // NADS: Average slope between endpoints of linear region of spring curve.
     "Spring Coefficient":       17570.83698,
-    // NADS: Free length of the TSDA between chassis and spindle_rl.
-    "Free Length" :             0.46000
+    // NADS: Free length of the TSDA between chassis and spindle_rr.
+    "Free Length" :             0.46000,
+    "Minimum Length" :          0.06000,
+    "Maximum Length" :          0.24000
   },
  
-  // NADS: Top/Bottom of pistonRod_rl
+  // NADS: Top/Bottom of pistonRod_rr
   "Shock":
   {
     "Location Chassis":         [-1.74307, 0.56706, 0.33928],

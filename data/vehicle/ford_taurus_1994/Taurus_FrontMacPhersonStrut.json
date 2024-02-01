@@ -71,7 +71,9 @@
      // NADS: Average slope between endpoints of linear region of spring curve.
      "Spring Coefficient":       28196.08696,
      // NADS: Free length of the TSDA between chassis and spindle_fl.
-     "Free Length" :             0.37500
+     "Free Length" :             0.37500,
+     "Minimum Length" :          0.12000,
+     "Maximum Length" :          0.24000
    },
  
    // NADS: Top/Bottom of pistonRod_fl

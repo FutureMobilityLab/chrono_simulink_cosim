@@ -1,11 +1,7 @@
 {
-  // The rear Ford Taurus suspension is not quite the same as the macpherson strut. This
-  // is mainly due to the fact that the lower control arm is separated into two bars. An
-  // existing Chrono suspension model that might work better than this is the Three-link
-  // Independent Rear Suspension.
-  "Name":                       "Ford Taurus 1994 Rear MacPherson Strut",
+  "Name":                       "Ford Taurus 1994 Rear Single Wishbone",
   "Type":                       "Suspension",
-  "Template":                   "MacPhersonStrut",
+  "Template":                   "SingleWishbone",
 
   // Alignment angles from Salaani's Dissertation: "Development And Validation of 
   // A Vehicle Model For The National Advanced Driving Simulator". They are the averages
@@ -32,15 +28,15 @@
    {
      "Mass":                     36.55000,
      "COM":                      [-1.75149, 0.74129, -0.23891],
-     "Inertia":                  [1.14012, 1.43048, 0.83817],
+     "Moments of Inertia":       [1.14012, 1.43048, 0.83817],
+     "Products of Inertia":      [0, 0, 0],
      "Radius":                   0.025
    },
 
    // NADS: The lower control arm is formed with two separate bodies: 
    // carm_rrr and carm_rrf. To create this in Chrono we will use the 
-   // control arm to capture the mass of both carm_rrr and carm_rrf. 
-   // But the control arm will use the hardpoints of carm_rrr. The
-   // tierod will use the hardpoints of carm_rrf.
+   // control arm to capture the mass of both carm_rrr and carm_rrf. We
+   // will use the average hardpoints as well.
    "Control Arm":
    {
      // Sum of each control arm's mass.
