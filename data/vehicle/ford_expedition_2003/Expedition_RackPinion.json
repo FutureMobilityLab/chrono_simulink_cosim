@@ -3,13 +3,16 @@
   "Type":                       "Steering",
   "Template":                   "RackPinion",
 
+  // Body 2.
   "Steering Link":
   {
-    "Mass":                     10,
+    "Mass":                     1.76,
     "COM":                      0,
-    "Inertia":                  [1, 1, 1],
+    // Generic inertia.
+    "Inertia":                  [0.004, 0.01, 0.01],
     "Radius":                   0.03,
-    "Length":                   0.9
+    // Twice the y location of point 6.
+    "Length":                   0.980
   },
 
   "Pinion":

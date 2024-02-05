@@ -1,0 +1,103 @@
+{
+  "Name":                       "Ford Expedition 2003 Front DoubleWishbone",
+  "Type":                       "Suspension",
+  "Template":                   "DoubleWishbone",
+
+  "Spindle" :
+  {
+    // Generic mass.
+    "Mass":                     1.103,
+    // Computed from vehicle track and loaded tire radius.
+    "COM":                      [0.000, 0.851, 0.374],
+    "Inertia":                  [0.000, 0.000, 0.000],
+    "Radius":                   0.15,
+    "Width":                    0.06
+  },
+
+  // Front Left Knuckle (body 8).
+  "Upright":
+  {
+    "Mass":                     63.32,
+    "COM":                      [-0.027, 0.845, 0.377],
+    "Moments of Inertia":       [1.86, 0.39, 1.89],
+    "Products of Inertia":      [0.0, 0.0, 0.0],
+    "Radius":                   0.025
+  },
+
+  // Front Left Upper Control Arm (body 6).
+  "Upper Control Arm":
+  {
+    "Mass":                     3.36,
+    "COM":                      [-0.015, 0.551, 0.709],
+    "Moments of Inertia":       [0.09, 0.07, 0.04],
+    "Products of Inertia":      [0.0, 0.0, 0.0],
+    "Radius":                   0.02,
+    // Point 8.
+    "Location Chassis Front":   [0.175, 0.478, 0.720],
+    // Point 9.
+    "Location Chassis Back":    [-0.163, 0.467, 0.701],
+    // Point 10.
+    "Location Upright":         [-0.051, 0.668, 0.706]
+  },
+
+  // Front Left Lower Control Arm (body 7).
+  "Lower Control Arm":
+  {
+    "Mass":                     8.85,
+    "COM":                      [0.03, 0.564, 0.254],
+    "Moments of Inertia":       [0.32, 0.21, 0.15],
+    "Products of Inertia":      [0.00, 0.00, 0.00],
+    "Radius":                   0.03,
+    // Point 3.
+    "Location Chassis Front":   [0.309, 0.368, 0.279],
+    // Point 4.
+    "Location Chassis Back":    [-0.165, 0.356, 0.296],
+    // Point 5.
+    "Location Upright":         [0.010, 0.787, 0.239]
+  },
+
+  // Distance constraint.
+  "Tierod":
+  {
+    // Point 6.
+    //"Location Chassis":         [0.142, 0.490, 0.389],
+    // Inside of Tie Rod Table 1. (https://doi.org/10.4271/2009-01-0453)
+    "Location Chassis":         [0.142, 0.450, 0.389],
+    // Point 7.
+    //"Location Upright":         [0.142, 0.798, 0.376]
+    // Outside of Tie Rod Table 1. (https://doi.org/10.4271/2009-01-0453)
+    "Location Upright":         [0.142, 0.790, 0.366]
+  },
+
+  "Spring":
+  {
+    // Point 1.
+    "Location Chassis":         [0.058, 0.531, 0.749],
+    // Point 2.
+    "Location Arm":             [0.057, 0.631, 0.290],
+    // Slope of linear fit to spring data (Figure 9).
+    "Spring Coefficient":       141549.0,
+    // Smallest point on line just before end of linear region (Figure 9).
+    "Minimum Length":           0.435,
+    // Largest point on line (Figure 9).
+    "Maximum Length":           0.480,//0.539,
+    // Point closest to 0 N (Figure 9).
+    "Free Length" :             0.536//,
+    //"Preload":                  -8800.0
+  },
+
+  "Shock":
+  {
+    // Point 1.
+    "Location Chassis":         [0.058, 0.531, 0.749],
+    // Point 2.
+    "Location Arm":             [0.057, 0.631, 0.290],
+    // Slope of linear fit to damper data (Figure 9).
+    "Damping Coefficient":      3033.0
+  },
+
+  "Axle":
+  {
+    "Inertia":                  0.4
+  }
+}

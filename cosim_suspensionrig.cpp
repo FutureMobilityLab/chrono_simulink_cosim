@@ -83,13 +83,13 @@ class Generic_STR_Setup : public STR_Setup {
   public:
     virtual std::string SuspensionRigJSON() const override { return "generic/suspensionTest/STR_example.json"; }
     virtual std::string VehicleJSON() const override { 
-        return "ford_taurus_1994/Vehicle_ford_taurus_1994.json";
-        // return "ford_expedition_2003/vehicle/Vehicle_ford_expedition_2003.json"; 
+        // return "ford_taurus_1994/Vehicle_ford_taurus_1994.json";
+        return "ford_expedition_2003/Vehicle_ford_expedition_2003.json"; 
         // return "generic/vehicle/Vehicle_DoubleWishbones_ARB.json";
     }
-    virtual std::string TireJSON() const override { return "ford_expedition_2003/tire/TMeasyTire.json"; }
+    virtual std::string TireJSON() const override { return "ford_expedition_2003/Expedition_TMeasyTire.json"; }
     virtual std::string DataDriverFile() const override { return "generic/suspensionTest/ST_inputs.dat"; }
-    virtual std::vector<int> TestAxles() const override { return {1}; }
+    virtual std::vector<int> TestAxles() const override { return {0}; }
     virtual std::vector<int> TestSubchassis() const override { return {}; }
     virtual std::vector<int> TestSteerings() const override { return {0}; }
     virtual double InitRideHeight() const override { return -0.001; } // 0.55
@@ -104,7 +104,7 @@ Generic_STR_Setup setup;
 
 // STR rig type
 enum class RigMode {PLATFORM, PUSHROD};
-RigMode rig_mode = RigMode::PUSHROD;
+RigMode rig_mode = RigMode::PLATFORM;
 
 // Specification of test rig inputs
 // enum class DriverMode {DATA_FILE, INTERACTIVE};

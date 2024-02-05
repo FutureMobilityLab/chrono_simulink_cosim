@@ -1,68 +1,93 @@
 {
-  "Name":                       "2003 Ford Expedition Rear DoubleWishbone",
+  "Name":                       "Ford Expedition 2003 Rear DoubleWishbone",
   "Type":                       "Suspension",
   "Template":                   "DoubleWishbone",
 
   "Spindle" :
   {
-    "Mass":                     0.0,
-    "COM":                      [-3.035, 0.858, 0.376],
+    // Generic mass.
+    "Mass":                     1.103,
+    // Computed from vehicle track, wheelbase, and loaded tire radius.
+    "COM":                      [-3.035, 0.851, 0.374],
     "Inertia":                  [0.0, 0.0, 0.0],
     "Radius":                   0.15,
     "Width":                    0.06
   },
 
+  // Rear Left Knuckle (Body 14).
   "Upright":
   {
-    "Mass":                     57.470,
+    "Mass":                     57.47,
     "COM":                      [-3.035, 0.858, 0.376],
-    "Moments of Inertia":       [1.41640, 0.26311, 1.59400],
-    "Products of Inertia":      [0, 0, 0],
+    "Moments of Inertia":       [1.42, 0.26, 1.59],
+    "Products of Inertia":      [0.0, 0.0, 0.0],
     "Radius":                   0.025
   },
 
+  // Rear Left Upper Control Arm (Body 12).
   "Upper Control Arm":
   {
-    "Mass":                     3.266,
+    "Mass":                     3.27,
     "COM":                      [-2.892, 0.610, 0.541],
-    "Moments of Inertia":       [0.10548, 0.06252, 0.04664],
+    "Moments of Inertia":       [0.11, 0.07, 0.05],
     "Products of Inertia":      [0, 0, 0],
     "Radius":                   0.02,
+    // Point 8.
     "Location Chassis Front":   [-2.844, 0.579, 0.527],
+    // Point 9.
     "Location Chassis Back":    [-3.182, 0.406, 0.561],
+    // Point 10.
     "Location Upright":         [-3.070, 0.789, 0.533]
   },
 
+  // Rear Left Lower Control Arm (Body 13).
   "Lower Control Arm":
   {
-    "Mass":                     10.297,
+    "Mass":                     10.30,
     "COM":                      [-2.963, 0.554, 0.267],
-    "Moments of Inertia":       [0.41095, 0.28797, 0.15619],
-    "Products of Inertia":      [0, 0, 0],
+    "Moments of Inertia":       [0.41, 0.29, 0.16],
+    "Products of Inertia":      [0.0, 0.0, 0.0],
     "Radius":                   0.03,
+    // Point 3.
     "Location Chassis Front":   [-2.710, 0.565, 0.339],
+    // Point 4.
     "Location Chassis Back":    [-3.184, 0.231, 0.305],
+    // Point 5.
     "Location Upright":         [-3.009, 0.803, 0.244]
   },
 
+  // Distance Constraint.
   "Tierod":
   {
+    // Point 6.
     "Location Chassis":         [-2.877, 0.104, 0.376],
+    // Point 7.
     "Location Upright":         [-2.877, 0.767, 0.284]
   },
 
   "Spring":
   {
+    // Point 1.
     "Location Chassis":         [-2.961, 0.551, 0.650],
+    // Point 2.
     "Location Arm":             [-2.962, 0.627, 0.197],
-    "Spring Coefficient":       436095,
-    "Free Length" :             0.526
+    // Slope of linear fit to spring data (Figure 9).
+    "Spring Coefficient":       112385.0,
+    // Smallest point on line just before end of linear region (Figure 9).
+    "Minimum Length":           0.406,
+    // Largest point on line (Figure 9).
+    "Maximum Length":           0.523,
+    // Point closest to 0 N (Figure 9).
+    "Free Length" :             0.523
   },
 
   "Shock":
   {
+    // Point 1.
     "Location Chassis":         [-2.961, 0.551, 0.650],
+    // Point 2.
     "Location Arm":             [-2.962, 0.627, 0.197],
+    // Slope of linear fit to damper data (Figure 9).
     "Damping Coefficient":      3228.000
   },
 
