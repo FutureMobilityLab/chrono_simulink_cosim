@@ -1,0 +1,210 @@
+// =============================================================================
+// Authors: Trevor Vidano
+//
+// Date: 11/26/2024
+// =============================================================================
+//
+// This file creates a Ford Expedition 2003 with a rack and pinion subsystem
+// that uses a linear force as an input. The throttle and brakes are left as
+// zero so that the vehicle simply is created and a sinusoidal input to the rack
+// and pinion moves the steering.
+//
+// The vehicle reference frame has Z up, X towards the front of the vehicle, and
+// Y pointing to the left.
+//
+// =============================================================================
+
+#include "chrono/core/ChStream.h"
+
+#include "chrono/solver/ChIterativeSolverLS.h"
+
+#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/utils/ChFilters.h"
+
+#include "chrono_vehicle/ChConfigVehicle.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/terrain/RigidTerrain.h"
+#include "chrono_vehicle/driver/ChIrrGuiDriver.h"
+#include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
+
+#include "chrono_cosimulation/ChCosimulation.h"
+
+#include "src/vehicle/WheeledVehicleForce.h"
+
+#include <filesystem>
+
+namespace chrono
+{
+
+  // =============================================================================
+
+  class Vehicle_Model
+  {
+  public:
+    virtual std::string ModelName() const = 0;
+    virtual std::string VehicleJSON() const = 0;
+    virtual std::string TireJSON() const = 0;
+    virtual std::string PowertrainJSON() const = 0;
+    virtual double CameraDistance() const = 0;
+    virtual ChContactMethod ContactMethod() const = 0;
+  };
+
+  class Sedan_Model : public Vehicle_Model
+  {
+  public:
+    virtual std::string ModelName() const override { return "Sedan"; }
+    virtual std::string VehicleJSON() const override { return "sedan/vehicle/Sedan_Vehicle.json"; }
+    virtual std::string TireJSON() const override
+    {
+      ////return "sedan/tire/Sedan_RigidTire.json";
+      return "sedan/tire/Sedan_TMeasyTire.json";
+      ////return "sedan/tire/Sedan_Pac02Tire.json";
+    }
+    virtual std::string PowertrainJSON() const override
+    {
+      return "sedan/powertrain/Sedan_SimpleMapPowertrain.json";
+    }
+    virtual double CameraDistance() const override { return 6.0; }
+    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
+  };
+} // namespace chrono
+
+// =============================================================================
+
+int main(int argc, char *argv[])
+{
+  // Create vehicle model.
+  auto vehicle_model = chrono::Sedan_Model();
+
+  // JSON files for terrain.v std::string
+  const std::string rigidterrain_file("terrain/RigidPlane.json");
+
+  // Initial vehicle position and orientation
+  const chrono::ChVector<> initLoc(0, 0, 0.5);
+  const double initYaw = 20 * chrono::CH_C_DEG_TO_RAD;
+
+  // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
+  const auto chassis_vis_type = chrono::vehicle::VisualizationType::MESH;
+  const auto suspension_vis_type = chrono::vehicle::VisualizationType::PRIMITIVES;
+  const auto steering_vis_type = chrono::vehicle::VisualizationType::PRIMITIVES;
+  const auto wheel_vis_type = chrono::vehicle::VisualizationType::MESH;
+  const auto tire_vis_type = chrono::vehicle::VisualizationType::MESH;
+
+  // Point on chassis tracked by the camera
+  const chrono::ChVector<> trackPoint(0.0, 0.0, 1.75);
+
+  // Simulation step size.
+  const double step_size = 2e-3;
+  const double tire_step_size = 1e-3;
+
+  // // The first item in argv is the path to current executable. Use this to set
+  // // the Chrono Data Directory.
+  // std::filesystem::path path(argv[0]);
+  // std::filesystem::path grandparent_path = path.parent_path().parent_path();
+  // std::filesystem::path data_dir_path(grandparent_path.string());
+  // data_dir_path.append("data").append("");
+  // std::filesystem::path veh_data_path(data_dir_path.string());
+  // veh_data_path.append("vehicle").append("");
+  // SetChronoDataPath(data_dir_path.string());
+  // SetDataPath(veh_data_path.string());
+
+  // --------------
+  // Create systems
+  // --------------
+
+  // Create the vehicle system
+  const std::string data_file = chrono::vehicle::GetDataFile(
+      vehicle_model.VehicleJSON());
+  chrono::vehicle::WheeledVehicleForce car(data_file,
+                                           vehicle_model.ContactMethod());
+  car.Initialize(chrono::ChCoordsys<>(initLoc, chrono::Q_from_AngZ(initYaw)));
+  car.GetChassis()->SetFixed(false);
+  car.SetChassisVisualizationType(chassis_vis_type);
+  car.SetChassisRearVisualizationType(chassis_vis_type);
+  car.SetSuspensionVisualizationType(suspension_vis_type);
+  car.SetSteeringVisualizationType(steering_vis_type);
+  car.SetWheelVisualizationType(wheel_vis_type);
+  // car.LockAxleDifferential(0, false);
+
+  // Create and initialize powertrain system.
+  auto powertrain = chrono::vehicle::ReadPowertrainJSON(
+      chrono::vehicle::GetDataFile(vehicle_model.PowertrainJSON()));
+  car.InitializePowertrain(powertrain);
+
+  // Create and initialize the tires
+  for (auto &axle : car.GetAxles())
+  {
+    for (auto &wheel : axle->GetWheels())
+    {
+      auto tire = chrono::vehicle::ReadTireJSON(
+          chrono::vehicle::GetDataFile(vehicle_model.TireJSON()));
+      car.InitializeTire(tire, wheel, tire_vis_type);
+    }
+  }
+
+  // Containing system
+  auto system = car.GetSystem();
+
+  // Create the terrain (from JSON file)
+  chrono::vehicle::RigidTerrain terrain(system, chrono::vehicle::GetDataFile(rigidterrain_file));
+  terrain.Initialize();
+
+  // Create the vehicle Irrlicht interface
+  auto vis = chrono_types::make_shared<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht>();
+  vis->SetWindowTitle("Rack and pinion demo");
+  vis->SetChaseCamera(trackPoint, vehicle_model.CameraDistance(), 0.5);
+  vis->Initialize();
+  vis->AddLightDirectional();
+  vis->AddSkyBox();
+  vis->AddLogo();
+  vis->AttachVehicle(&car);
+
+  // Create the interactive driver
+  auto driver = chrono::vehicle::ChIrrGuiDriver(*vis);
+  driver.SetSteeringDelta(0.02);
+  driver.SetThrottleDelta(0.02);
+  driver.SetBrakingDelta(0.06);
+  driver.Initialize();
+
+  // ------------------------
+  // Initialize values for simulation loop.
+  // ------------------------
+
+  car.LogSubsystemTypes();
+  std::cout << "\nVehicle mass: " << car.GetMass() << std::endl;
+  std::cout << "\nWheelbase: " << car.GetWheelbase() << std::endl;
+  std::cout << "\nFront Track: " << car.GetWheeltrack(0) << std::endl;
+  std::cout << "\nRear Track: " << car.GetWheeltrack(1) << std::endl;
+
+  // Enabling realtime attempts to make the simulation run at real time, even
+  // if the simulation can run faster.
+  car.EnableRealtime(true);
+  while (vis->Run())
+  {
+    // Render scene
+    vis->BeginScene();
+    vis->Render();
+    vis->EndScene();
+
+    // Get driver inputs
+    chrono::vehicle::DriverInputs driver_inputs = driver.GetInputs();
+
+    // Update modules (process inputs from other modules)
+    double time = car.GetSystem()->GetChTime();
+    driver.Synchronize(time);
+    car.Synchronize(time, driver_inputs, terrain);
+    terrain.Synchronize(time);
+    vis->Synchronize(vehicle_model.ModelName(), driver_inputs);
+
+    // Advance simulation for one timestep for all modules
+    driver.Advance(step_size);
+    car.Advance(step_size);
+    terrain.Advance(step_size);
+    vis->Advance(step_size);
+  }
+  return 0;
+}

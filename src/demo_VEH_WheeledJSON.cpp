@@ -44,11 +44,12 @@ using namespace chrono::vehicle;
 //    UAZ     - UAZ minibus
 //    CityBus - passenger bus
 //    MAN     - MAN 10t truck
-//    MTV     - MTV truck 
+//    MTV     - MTV truck
 //    ACV     - articulated chassis vehicle (skid steer)
 
-class Vehicle_Model {
-  public:
+class Vehicle_Model
+{
+public:
     virtual std::string ModelName() const = 0;
     virtual std::string VehicleJSON() const = 0;
     virtual std::string TireJSON() const = 0;
@@ -57,22 +58,26 @@ class Vehicle_Model {
     virtual ChContactMethod ContactMethod() const = 0;
 };
 
-class HMMWV_Model : public Vehicle_Model {
-  public:
+class HMMWV_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "HMMWV"; }
-    virtual std::string VehicleJSON() const override {
+    virtual std::string VehicleJSON() const override
+    {
         return "hmmwv/vehicle/HMMWV_Vehicle.json";
         ////return "hmmwv/vehicle/HMMWV_Vehicle_bushings.json";
         ////return "hmmwv/vehicle/HMMWV_Vehicle_4WD.json";
     }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "hmmwv/tire/HMMWV_RigidTire.json";
         ////return "hmmwv/tire/HMMWV_FialaTire.json";
         ////return "hmmwv/tire/HMMWV_TMeasyTire.json";
         ////return "hmmwv/tire/HMMWV_Pac89Tire.json";
         return "hmmwv/tire/HMMWV_Pac02Tire.json";
     }
-    virtual std::string PowertrainJSON() const override {
+    virtual std::string PowertrainJSON() const override
+    {
         return "hmmwv/powertrain/HMMWV_ShaftsPowertrain.json";
         ////return "hmmwv/powertrain/HMMWV_SimpleCVTPowertrain.json";
         ////return "hmmwv/powertrain/HMMWV_SimplePowertrain.json";
@@ -81,11 +86,13 @@ class HMMWV_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class Sedan_Model : public Vehicle_Model {
-  public:
+class Sedan_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "Sedan"; }
     virtual std::string VehicleJSON() const override { return "sedan/vehicle/Sedan_Vehicle.json"; }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "sedan/tire/Sedan_RigidTire.json";
         return "sedan/tire/Sedan_TMeasyTire.json";
         ////return "sedan/tire/Sedan_Pac02Tire.json";
@@ -95,15 +102,18 @@ class Sedan_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class UAZ_Model : public Vehicle_Model {
-  public:
+class UAZ_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "UAZ"; }
-    virtual std::string VehicleJSON() const override {
+    virtual std::string VehicleJSON() const override
+    {
         ////return "uaz/vehicle/UAZBUS_Vehicle.json";
         ////return "uaz/vehicle/UAZ469_Vehicle.json";
         return "uaz/vehicle/UAZBUS_SAEVehicle.json";
     }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         return "uaz/tire/UAZBUS_TMeasyTireFront.json";
         ////return "uaz/tire/UAZBUS_Pac02Tire.json";
     }
@@ -112,13 +122,16 @@ class UAZ_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class VW_Microbus_Model : public Vehicle_Model {
-  public:
+class VW_Microbus_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "VW_Microbus"; }
-    virtual std::string VehicleJSON() const override {
+    virtual std::string VehicleJSON() const override
+    {
         return "VW_microbus/json/van_Vehicle.json";
     }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "VW_microbus/json/van_Pac02Tire.json";
         return "VW_microbus/json/van_TMeasyTire.json";
     }
@@ -127,32 +140,38 @@ class VW_Microbus_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class CityBus_Model : public Vehicle_Model {
-  public:
+class CityBus_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "CityBus"; }
     virtual std::string VehicleJSON() const override { return "citybus/vehicle/CityBus_Vehicle.json"; }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "citybus/tire/CityBus_RigidTire.json";
         return "citybus/tire/CityBus_TMeasyTire.json";
         ////return "citybus/tire/CityBus_Pac02Tire.json";
     }
-    virtual std::string PowertrainJSON() const override {
+    virtual std::string PowertrainJSON() const override
+    {
         return "citybus/powertrain/CityBus_SimpleMapPowertrain.json";
     }
     virtual double CameraDistance() const override { return 14.0; }
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class MAN_Model : public Vehicle_Model {
-  public:
+class MAN_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "MAN"; }
-    virtual std::string VehicleJSON() const override {
+    virtual std::string VehicleJSON() const override
+    {
         ////return "MAN_Kat1/vehicle/MAN_5t_Vehicle_4WD.json";
         ////return "MAN_Kat1/vehicle/MAN_7t_Vehicle_6WD.json";
         return "MAN_Kat1/vehicle/MAN_10t_Vehicle_8WD.json";
     }
     virtual std::string TireJSON() const override { return "MAN_Kat1/tire/MAN_5t_TMeasyTire.json"; }
-    virtual std::string PowertrainJSON() const override {
+    virtual std::string PowertrainJSON() const override
+    {
         ////return "MAN_Kat1/powertrain/MAN_5t_SimpleCVTPowertrain.json";
         return "MAN_Kat1/powertrain/MAN_7t_SimpleCVTPowertrain.json";
     }
@@ -160,8 +179,9 @@ class MAN_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class MTV_Model : public Vehicle_Model {
-  public:
+class MTV_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "MTV"; }
     virtual std::string VehicleJSON() const override { return "mtv/vehicle/MTV_Vehicle_WalkingBeam.json"; }
     virtual std::string TireJSON() const override { return "mtv/tire/FMTV_TMeasyTire.json"; }
@@ -170,8 +190,9 @@ class MTV_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-class ACV_Model : public Vehicle_Model {
-  public:
+class ACV_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "ACV"; }
     virtual std::string VehicleJSON() const override { return "articulated_chassis/ACV_Vehicle.json"; }
     virtual std::string TireJSON() const override { return "articulated_chassis/ACV_RigidTire.json"; }
@@ -180,11 +201,13 @@ class ACV_Model : public Vehicle_Model {
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::NSC; }
 };
 
-class Taurus_Model : public Vehicle_Model {
-  public:
+class Taurus_Model : public Vehicle_Model
+{
+public:
     virtual std::string ModelName() const override { return "Taurus"; }
     virtual std::string VehicleJSON() const override { return "ford_taurus_1994/Vehicle_ford_taurus_1994.json"; }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "sedan/tire/Sedan_RigidTire.json";
         return "sedan/tire/Sedan_TMeasyTire.json";
         ////return "sedan/tire/Sedan_Pac02Tire.json";
@@ -199,18 +222,21 @@ class Taurus_Model : public Vehicle_Model {
 // Available models:
 //    Ultra_Tow 40in x 48 in
 
-class Trailer_Model {
-  public:
+class Trailer_Model
+{
+public:
     virtual std::string ModelName() const = 0;
     virtual std::string TrailerJSON() const = 0;
     virtual std::string TireJSON() const = 0;
 };
 
-class UT_Model : public Trailer_Model {
-  public:
+class UT_Model : public Trailer_Model
+{
+public:
     virtual std::string ModelName() const override { return "Ultra-Tow"; }
     virtual std::string TrailerJSON() const override { return "ultra_tow/UT_Trailer.json"; }
-    virtual std::string TireJSON() const override {
+    virtual std::string TireJSON() const override
+    {
         ////return "ultra_tow/UT_RigidTire.json";
         return "ultra_tow/UT_TMeasyTire.json";
     }
@@ -219,15 +245,15 @@ class UT_Model : public Trailer_Model {
 // =============================================================================
 
 // Current vehicle model selection
-//auto vehicle_model = HMMWV_Model();
-////auto vehicle_model = Sedan_Model();
+// auto vehicle_model = HMMWV_Model();
+auto vehicle_model = Sedan_Model();
 ////auto vehicle_model = VW_Microbus_Model();
 ////auto vehicle_model = UAZ_Model();
 ////auto vehicle_model = CityBus_Model();
 ////auto vehicle_model = MAN_Model();
 ////auto vehicle_model = MTV_Model();
 ////auto vehicle_model = ACV_Model();
-auto vehicle_model = Taurus_Model();
+// auto vehicle_model = Taurus_Model();
 
 // Trailer model selection (use only with HMMWV, Sedan, or UAZ)
 bool add_trailer = false;
@@ -252,7 +278,8 @@ const std::string out_dir = GetChronoOutputPath() + "WHEELED_JSON";
 
 // =============================================================================
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
     // Create the vehicle system
@@ -270,8 +297,10 @@ int main(int argc, char* argv[]) {
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires
-    for (auto& axle : vehicle.GetAxles()) {
-        for (auto& wheel : axle->GetWheels()) {
+    for (auto &axle : vehicle.GetAxles())
+    {
+        for (auto &wheel : axle->GetWheels())
+        {
             auto tire = ReadTireJSON(vehicle::GetDataFile(vehicle_model.TireJSON()));
             vehicle.InitializeTire(tire, wheel, VisualizationType::MESH);
         }
@@ -282,15 +311,18 @@ int main(int argc, char* argv[]) {
 
     // Create the trailer system (build into same ChSystem)
     std::shared_ptr<WheeledTrailer> trailer;
-    if (add_trailer) {
+    if (add_trailer)
+    {
         trailer = chrono_types::make_shared<WheeledTrailer>(system,
                                                             vehicle::GetDataFile(trailer_model.TrailerJSON()));
         trailer->Initialize(vehicle.GetChassis());
         trailer->SetChassisVisualizationType(VisualizationType::PRIMITIVES);
         trailer->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
         trailer->SetWheelVisualizationType(VisualizationType::NONE);
-        for (auto& axle : trailer->GetAxles()) {
-            for (auto& wheel : axle->GetWheels()) {
+        for (auto &axle : trailer->GetAxles())
+        {
+            for (auto &wheel : axle->GetWheels())
+            {
                 auto tire = ReadTireJSON(vehicle::GetDataFile(trailer_model.TireJSON()));
                 trailer->InitializeTire(tire, wheel, VisualizationType::PRIMITIVES);
             }
@@ -320,11 +352,13 @@ int main(int argc, char* argv[]) {
 
     // Initialize output directories
     std::string veh_dir = out_dir + "/" + vehicle_model.ModelName();
-    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+    if (!filesystem::create_directory(filesystem::path(out_dir)))
+    {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }
-    if (!filesystem::create_directory(filesystem::path(veh_dir))) {
+    if (!filesystem::create_directory(filesystem::path(veh_dir)))
+    {
         std::cout << "Error creating directory " << veh_dir << std::endl;
         return 1;
     }
@@ -342,13 +376,14 @@ int main(int argc, char* argv[]) {
     ////vehicle.SetOutput(ChVehicleOutput::ASCII, veh_dir, "output", 0.1);
 
     // Modify solver settings if the vehicle model contains bushings
-    if (vehicle.HasBushings()) {
+    if (vehicle.HasBushings())
+    {
         auto solver = chrono_types::make_shared<ChSolverMINRES>();
         system->SetSolver(solver);
         solver->SetMaxIterations(150);
         solver->SetTolerance(1e-10);
         solver->EnableDiagonalPreconditioner(true);
-        solver->EnableWarmStart(true);  // IMPORTANT for convergence when using EULER_IMPLICIT_LINEARIZED
+        solver->EnableWarmStart(true); // IMPORTANT for convergence when using EULER_IMPLICIT_LINEARIZED
         solver->SetVerbose(false);
 
         step_size = 2e-4;
@@ -357,7 +392,8 @@ int main(int argc, char* argv[]) {
 
     // Simulation loop
     vehicle.EnableRealtime(true);
-    while (vis->Run()) {
+    while (vis->Run())
+    {
         // Render scene
         vis->BeginScene();
         vis->Render();

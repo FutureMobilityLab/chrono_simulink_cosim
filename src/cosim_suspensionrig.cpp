@@ -43,25 +43,25 @@ using namespace chrono::cosimul;
 // =============================================================================
 // Class that adds a MacPherson Strut to the Three Link Independent Rear
 // Suspension.
-class ThreeLinkMacPhersonStrut : public ChThreeLinkIRS {
-  public:
-    void InitializeSide(VehicleSide side,
-                        std::shared_ptr<ChBodyAuxRef> chassis,
-                        const std::vector<ChVector<> >& points,
-                        const std::vector<ChVector<>>& dirs,
-                        double ang_vel) override {
-            // First create the ThreeLinkIRS.
-            ChThreeLinkIRS::InitializeSide(side, chassis, points, dirs, ang_vel);
+// class ThreeLinkMacPhersonStrut : public ChThreeLinkIRS {
+//   public:
+//     void InitializeSide(VehicleSide side,
+//                         std::shared_ptr<ChBodyAuxRef> chassis,
+//                         const std::vector<ChVector<> >& points,
+//                         const std::vector<ChVector<>>& dirs,
+//                         double ang_vel) override {
+//             // First create the ThreeLinkIRS.
+//             ChThreeLinkIRS::InitializeSide(side, chassis, points, dirs, ang_vel);
 
-            // Now add the cylindrical joint between the chassis and trailing arm.
-            m_spring[side] = chrono_types::make_shared<ChLinkTSDA>();
-            m_spring[side]->SetNameString(m_name + "_spring" + suffix);
-            m_spring[side]->Initialize(chassis, m_arm[side], false, points[SPRING_C], points[SPRING_A]);
-            m_spring[side]->SetRestLength(getSpringRestLength());
-            m_spring[side]->RegisterForceFunctor(getSpringForceFunctor());
-            chassis->GetSystem()->AddLink(m_spring[side]);
-    }
-};
+//             // Now add the cylindrical joint between the chassis and trailing arm.
+//             m_spring[side] = chrono_types::make_shared<ChLinkTSDA>();
+//             m_spring[side]->SetNameString(m_name + "_spring" + suffix);
+//             m_spring[side]->Initialize(chassis, m_arm[side], false, points[SPRING_C], points[SPRING_A]);
+//             m_spring[side]->SetRestLength(getSpringRestLength());
+//             m_spring[side]->RegisterForceFunctor(getSpringForceFunctor());
+//             chassis->GetSystem()->AddLink(m_spring[side]);
+//     }
+// };
 
 // =============================================================================
 // Class that enables direct access to the rig inputs.

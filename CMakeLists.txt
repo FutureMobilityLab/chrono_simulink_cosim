@@ -1,3 +1,4 @@
+#set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 #--------------------------------------------------------------
 # 
 # Example of CMake configuration file to build an external 
@@ -77,6 +78,9 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+
+add_subdirectory(src)
+# add_subdirectory(test)
 
 #--------------------------------------------------------------
 # Return now if Chrono or a required component was not found.
@@ -167,9 +171,42 @@ foreach(SOURCE_FILE ${SOURCES})
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
 
-  target_link_libraries(${EXECUTABLE_NAME} ${CHRONO_LIBRARIES})
+  target_link_libraries(${EXECUTABLE_NAME} ${CHRONO_LIBRARIES} vehicle)
 
 endforeach()
+
+add_library(steering 
+  src/steering/ChRackPinionForce.cpp  src/steering/ChRackPinionForce.h
+  src/steering/RackPinionForce.cpp    src/steering/RackPinionForce.h
+)
+set_target_properties(steering PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
+target_include_directories(steering PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(steering ${CHRONO_LIBRARIES})
+
+add_library(utils 
+  src/utils/utils.cpp
+)
+set_target_properties(utils PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+)
+target_include_directories(utils PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(utils ${CHRONO_LIBRARIES} steering)
+
+add_library(vehicle
+  src/vehicle/WheeledVehicleForce.cpp src/vehicle/WheeledVehicleForce.h
+)
+set_target_properties(vehicle PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+)
+target_include_directories(vehicle PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(vehicle ${CHRONO_LIBRARIES} steering utils)
 
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
@@ -184,3 +221,7 @@ endforeach()
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 add_DLL_copy_command("${CHRONO_DLLS}")
+
+# set(CMAKE_BUILD_DIR ${PROJECT_SOURCE_DIR}/build)
+# set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BUILD_DIR}/bin)
+# set(LIBRARY_OUTPUT_PATH ${CMAKE_BUILD_DIR}/lib)
