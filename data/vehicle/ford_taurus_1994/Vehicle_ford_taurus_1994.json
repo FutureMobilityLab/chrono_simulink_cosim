@@ -17,8 +17,9 @@
       "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
       "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
       "Left Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
-      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json"//,
-      //"Antirollbar Input File": "ford_taurus_1994/Taurus_FrontAntirollBarRSD.json",
+      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Antirollbar Input File": "ford_taurus_1994/Taurus_FrontAntirollBarRSD.json",
+
       // Chrono attaches the antirollbar to the lower control arm (LCA) for MacPherson
       // strut suspensions. The Taurus attaches it to the strut. It would be more
       // accurate to modify Chrono so that the antirollbar connects to the
@@ -26,28 +27,31 @@
       // the LCA at the point where the LCA attaches to the upright. To get somewhat
       // reasonable results, we can place the antirollbar at the spindle z-height. The
       // length of the distance constraint (droplink length) is adjusted accordingly.
-      //"Antirollbar Location": [ 0.79375, 0.00000, -0.27795 ] // -0.27795
+      "Antirollbar Location": [ 0.79375, 0.00000, -0.27795 ] // -0.27795
     },
 
     {
-      "Suspension Input File": "ford_taurus_1994/Taurus_ThreeLinkIRS.json",
+      //"Suspension Input File": "ford_taurus_1994/Taurus_ThreeLinkIRS.json",
       //"Suspension Input File": "ford_taurus_1994/Taurus_RearMacPhersonStrut.json",
+      "Suspension Input File": "ford_taurus_1994/Taurus_DoubleWishboneRear.json",
       "Suspension Location": [0, 0, 0.0],
       "Left Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
       "Right Wheel Input File": "ford_expedition_2003/wheel/WheelSimple.json",
       "Left Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
-      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json"//,
-      //"Antirollbar Input File": "ford_taurus_1994/Taurus_RearAntirollBarRSD.json",
-      // NADS: Top of rear stabilizer bar link connects to knuckle 7.7" above the center
-      // of the rear spindle. Chrono places the center of the antirollbar at the x location.
-      // So this must be moved back by the width of the antirollbar.
-      //"Antirollbar Location": [ -1.96421, 0.00000, 0.23193 ] // -0.26807
+      "Right Brake Input File": "ford_expedition_2003/brake/Expedition_BrakeSimple.json",
+      "Antirollbar Input File": "ford_taurus_1994/Taurus_RearAntirollBarRSD.json",
+
+      // For the same reason as explained above for the front suspension, the rear 
+      // antirollbar must be modified from the NADS definition. We place the antirollbar
+      // at the spindle z-height. The length and droplink length are adjusted so that it
+      // connects to the LCA spherical joint.
+      "Antirollbar Location": [ -1.96421, 0.00000, -0.26807 ]
     }
   ],
 
   "Steering Subsystems": [
     {
-      "Input File": "ford_expedition_2003/steering/Expedition_RackPinion.json",
+      "Input File": "ford_taurus_1994/Taurus_RackPinion.json",
       "Location": [0.78108, 0, -0.19742],
       "Orientation": [ 1, 0, 0, 0 ]
     }

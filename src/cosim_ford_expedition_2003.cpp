@@ -38,6 +38,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/MacPhersonStrut.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
@@ -68,11 +69,10 @@ class Vehicle_Model {
 class Expedition_Model : public Vehicle_Model {
   public:
     virtual std::string ModelName() const override { return "Ford Expedition 2003"; }
-    virtual std::string VehicleJSON() const override { return "ford_expedition_2003/vehicle/Vehicle_ford_expedition_2003.json"; }
+    virtual std::string VehicleJSON() const override { return "ford_expedition_2003/Vehicle_ford_expedition_2003.json"; }
     virtual std::string TireJSON() const override {
-        return "ford_expedition_2003/tire/TMeasyTire.json";
+        return "ford_expedition_2003/Expedition_TMeasyTire.json";
     }
-    // virtual std::string PowertrainJSON() const override { return "hmmwv/powertrain/HMMWV_SimpleCVTPowertrain.json"; }
     virtual double CameraDistance() const override { return 6.0; }
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
@@ -82,14 +82,14 @@ class Taurus_Model : public Vehicle_Model {
     virtual std::string ModelName() const override { return "Ford Taurus 1994"; }
     virtual std::string VehicleJSON() const override { return "ford_taurus_1994/Vehicle_ford_taurus_1994.json"; }
     virtual std::string TireJSON() const override {
-        // return "hmmwv/tire/HMMWV_Pac02Tire.json";
-        return "ford_expedition_2003/tire/TMeasyTire.json";
+        //return "ford_taurus_1994/Taurus_TMeasyTire.json";
+        return "generic/tire/FialaTire.json";
     }
     virtual double CameraDistance() const override { return 6.0; }
     virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
 };
 
-auto vehicle_model = Taurus_Model();
+auto vehicle_model = Expedition_Model();
 
 // JSON files for terrain.v
 //std::string rigidterrain_file("terrain/RigidPlane.json");
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     if ( argc == 2 ) {
         PORT_NUMBER = std::stoi(argv[1]);
     }
-    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << "\n";
 
     // --------------
     // Create systems
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle system
     WheeledVehicle car(GetDataFile(vehicle_model.VehicleJSON()), vehicle_model.ContactMethod());
     car.Initialize(ChCoordsys<>(initLoc, initRot));
-    car.GetChassis()->SetFixed(true);
+    car.GetChassis()->SetFixed(false);
     car.SetChassisVisualizationType(chassis_vis_type);
     //car.SetChassisRearVisualizationType(chassis_vis_type);
     car.SetSuspensionVisualizationType(suspension_vis_type);

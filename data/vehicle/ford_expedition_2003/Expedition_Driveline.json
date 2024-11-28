@@ -1,8 +1,8 @@
-// This driveline will be overriden by the direct application of torques to 
-// each wheel's axle. The data in here is meaningless. All that is required
-// is that this be a 4 wheel drive model to provide access to each wheel's
-// axle.
 {
+  // This driveline will be overriden by the direct application of torques to 
+  // each wheel's axle. The data in here is meaningless. All that is required
+  // is that this be a 4 wheel drive model to provide access to each wheel's
+  // axle.
   "Name":                       "Ford Expedition 4WD Driveline",
   "Type":                       "Driveline",
   "Template":                   "ShaftsDriveline4WD",

@@ -10,7 +10,7 @@
     "Inertia":                  [1, 1, 1],
     // NADS: Front Stabilizer half-length.
     // "Length":                   0.54864,
-    // Need to modify locations. (see Vehicle_ford_taurus_1994.json).
+    // Y-distance from vehicle centerline to control arm spherical joint.
     "Length":                   0.73025,
     // NADS: Front Stabilizer bar distance from endpoint to chassis mount.
     "Width":                    0.19050,
@@ -21,7 +21,7 @@
   {
     // NADS: Front stabilizer bar mount length.
     //"Height":                   0.26670
-    // Need to modify locations. (see Vehicle_ford_taurus_1994.json).
+    // Z-distance from spindle to spherical joint.
     "Height":                    -0.11778
   },
 

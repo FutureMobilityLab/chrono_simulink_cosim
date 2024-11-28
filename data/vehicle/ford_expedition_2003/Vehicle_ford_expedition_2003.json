@@ -1,0 +1,59 @@
+{
+  // This Ford Expedition Model comes from the data published in 
+  //"Real-time dynamic simulation of vehicles with electronic stability control: Modeling and validation"
+  // The data in that publication provide locations in the global coordinate frame whose origin is 
+  // located at ground level directly below the front axle and the vehicle centerline. The frame uses
+  // x: forward, y: right, z: down. 
+  //
+  // Chrono uses x: forward, y: left, z: up. So the data has been adjusted accordingly.
+  "Name": "NADS Vehicle - Ford Expedition 2003",
+  "Type": "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis": {
+    "Input File": "ford_expedition_2003/Expedition_Chassis.json"
+  },
+
+  "Axles": [
+    {
+      "Suspension Input File": "ford_expedition_2003/Expedition_FrontDoubleWishbone.json",
+      "Suspension Location": [0, 0, 0],
+      "Steering Index": 0,
+      "Left Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Right Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json"//,
+      //"Antirollbar Input File": "ford_expedition_2003/antirollbar/FrontAntirollBarRSD.json",
+      //"Antirollbar Location": [ -0.343, 0.0, 0.290 ]
+    },
+
+    {
+      "Suspension Input File": "ford_expedition_2003/Expedition_RearDoubleWishbone.json",
+      "Suspension Location": [0, 0, 0],
+      "Left Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Right Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
+      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json"//,
+      //"Antirollbar Input File": "ford_expedition_2003/antirollbar/RearAntirollBarRSD.json",
+      //"Antirollbar Location": [ -3.3, 0.0, 0.35 ]
+    }
+  ],
+
+  "Steering Subsystems": [
+    {
+      "Input File": "ford_expedition_2003/Expedition_RackPinion.json",
+      // CG Location of body 2.
+      "Location": [ 0.142, 0, 0.389],
+      "Orientation": [ 1.0, 0.0, 0.0, 0.0 ]
+    }
+  ],
+
+  "Wheelbase": 3.0226,
+  "Minimum Turning Radius": 7.62,
+  "Maximum Steering Angle (deg)": 25,
+
+  "Driveline": {
+    "Input File": "ford_expedition_2003/Expedition_Driveline.json",
+    "Suspension Indexes": [ 0, 1 ]
+  }
+}
