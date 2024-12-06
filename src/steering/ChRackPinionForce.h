@@ -66,6 +66,9 @@ namespace chrono
       virtual void InitializeInertiaProperties() override;
       virtual void UpdateInertiaProperties() override;
 
+      /// Return the damping of the steering system.
+      virtual double GetDamping() const = 0;
+
       /// Return the mass of the steering link.
       virtual double GetSteeringLinkMass() const = 0;
 
@@ -94,6 +97,7 @@ namespace chrono
       std::shared_ptr<ChLinkLockPrismatic> m_prismatic; ///< handle to the prismatic joint chassis-link
       std::shared_ptr<ChLinkMotorLinearForce> m_motor;  ///< handle to the linear actuator on steering link
       std::shared_ptr<ChLinkTSDA> m_springDamper;       ///< handle to the spring-damper on rack
+      double m_damping;
     };
 
   } // namespace vehicle

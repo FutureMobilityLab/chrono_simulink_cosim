@@ -39,6 +39,7 @@ namespace chrono
       m_steeringLinkCOM = d["Steering Link"]["COM"].GetDouble();
       m_steeringLinkRadius = d["Steering Link"]["Radius"].GetDouble();
       m_steeringLinkLength = d["Steering Link"]["Length"].GetDouble();
+      m_damping = d["Steering Link"]["Damping"].GetDouble();
 
       // Pinion radius
       m_pinionRadius = d["Pinion"]["Radius"].GetDouble();

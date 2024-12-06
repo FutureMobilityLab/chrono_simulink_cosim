@@ -24,6 +24,7 @@ namespace chrono
       virtual double GetSteeringLinkCOM() const override { return m_steeringLinkCOM; }
       virtual double GetSteeringLinkRadius() const override { return m_steeringLinkRadius; }
       virtual double GetSteeringLinkLength() const override { return m_steeringLinkLength; }
+      virtual double GetDamping() const override { return m_damping; }
 
       virtual double GetPinionRadius() const override { return m_pinionRadius; }
 

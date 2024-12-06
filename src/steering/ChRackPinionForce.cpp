@@ -3,8 +3,7 @@
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChTexture.h"
 
-#include "ChRackPinionForce.h"
-
+#include "src/steering/ChRackPinionForce.h"
 namespace chrono
 {
   namespace vehicle
@@ -50,12 +49,6 @@ namespace chrono
       m_link->SetInertiaXX(GetSteeringLinkInertia());
       sys->AddBody(m_link);
 
-      // // Create and initialize the prismatic joint between chassis and link.
-      // m_prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
-      // m_prismatic->SetNameString(m_name + "_prismatic");
-      // m_prismatic->Initialize(chassisBody, m_link, ChCoordsys<>(link_pos, link_rot * Q_from_AngX(CH_C_PI_2)));
-      // sys->AddLink(m_prismatic);
-
       // Create and initialize the linear actuator.
       // Y-axis for the chassis and rack point along the direction of the slide,
       // we need to rotate these frames by 90 degrees about the z axis so that
@@ -80,26 +73,36 @@ namespace chrono
           ChVector<>(0, 0, 0)  // Connection point on second body
       );
       m_springDamper->SetNameString("TSDA");
-      m_springDamper->SetSpringCoefficient(0.0);     // Spring stiffness (N/m)
-      m_springDamper->SetDampingCoefficient(1000.0); // Damping coefficient (Ns/m)
-      m_springDamper->SetRestLength(0.0);            // Initial separation between connection points
+      m_springDamper->SetSpringCoefficient(0.0);           // Spring stiffness (N/m)
+      m_springDamper->SetDampingCoefficient(GetDamping()); // Damping coefficient (Ns/m)
+      m_springDamper->SetRestLength(0.0);                  // Initial separation between connection points
       sys->Add(m_springDamper);
     }
 
     // -----------------------------------------------------------------------------
     void ChRackPinionForce::Synchronize(double time, const DriverInputs &driver_inputs)
     {
-      // auto forceFun = chrono_types::make_shared<ChFunction_Const>(0.0);
-      // m_motor->SetForceFunction(forceFun);
-
       // Interpret the steering input as a torque and scale it by radius to get
       // linear force on the rack.
-      double force = driver_inputs.m_steering * GetPinionRadius() * 1000.;
+      double force = driver_inputs.m_steering * GetPinionRadius() * 2000.;
+      double angle = m_motor->GetMotorPos() / GetPinionRadius();
 
       if (auto fun = std::dynamic_pointer_cast<ChFunction_Const>(
               m_motor->GetForceFunction()))
       {
-        fun->Set_yconst(force);
+        // Enforce maximum displacement.
+        if (angle > GetMaxAngle())
+        {
+          fun->Set_yconst(-force);
+        }
+        else if (angle < -GetMaxAngle())
+        {
+          fun->Set_yconst(-force);
+        }
+        else
+        {
+          fun->Set_yconst(force);
+        }
       }
     }
 

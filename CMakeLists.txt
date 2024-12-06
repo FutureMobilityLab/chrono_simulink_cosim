@@ -17,6 +17,7 @@ cmake_minimum_required(VERSION 3.10)
 # Modify the project name if you want: 
 #--------------------------------------------------------------
 
+set(CMAKE_CXX_STANDARD 17)
 project(chrono_simulink_cosim)
 
 #--------------------------------------------------------------
@@ -79,7 +80,7 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_subdirectory(src)
+# add_subdirectory(src)
 # add_subdirectory(test)
 
 #--------------------------------------------------------------
@@ -171,7 +172,7 @@ foreach(SOURCE_FILE ${SOURCES})
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
 
-  target_link_libraries(${EXECUTABLE_NAME} ${CHRONO_LIBRARIES} vehicle)
+  target_link_libraries(${EXECUTABLE_NAME} ${CHRONO_LIBRARIES} vehicle suspension_test_rig)
 
 endforeach()
 
@@ -207,6 +208,17 @@ set_target_properties(vehicle PROPERTIES
 )
 target_include_directories(vehicle PUBLIC ${CMAKE_SOURCE_DIR})
 target_link_libraries(vehicle ${CHRONO_LIBRARIES} steering utils)
+
+add_library(suspension_test_rig
+  src/suspension_test_rig/SuspensionTestRig.cpp src/suspension_test_rig/SuspensionTestRig.h
+)
+set_target_properties(suspension_test_rig PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+)
+target_include_directories(suspension_test_rig PUBLIC ${CMAKE_SOURCE_DIR})
+target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
 
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
