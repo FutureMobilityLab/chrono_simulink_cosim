@@ -176,6 +176,8 @@ foreach(SOURCE_FILE ${SOURCES})
 
 endforeach()
 
+add_compile_definitions(CH_API_COMPILE_VEHICLE)
+
 add_library(steering 
   src/steering/ChRackPinionForce.cpp  src/steering/ChRackPinionForce.h
   src/steering/RackPinionForce.cpp    src/steering/RackPinionForce.h
@@ -184,7 +186,10 @@ set_target_properties(steering PROPERTIES
 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
-target_include_directories(steering PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(steering PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${CHRONO_INCLUDE_DIRS}
+)
 target_link_libraries(steering ${CHRONO_LIBRARIES})
 
 add_library(utils 
@@ -195,7 +200,10 @@ set_target_properties(utils PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
-target_include_directories(utils PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(utils PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${CHRONO_INCLUDE_DIRS}
+)
 target_link_libraries(utils ${CHRONO_LIBRARIES} steering)
 
 add_library(vehicle
@@ -206,7 +214,10 @@ set_target_properties(vehicle PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
-target_include_directories(vehicle PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(vehicle PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${CHRONO_INCLUDE_DIRS}
+)
 target_link_libraries(vehicle ${CHRONO_LIBRARIES} steering utils)
 
 add_library(suspension_test_rig
@@ -217,7 +228,11 @@ set_target_properties(suspension_test_rig PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
-target_include_directories(suspension_test_rig PUBLIC ${CMAKE_SOURCE_DIR})
+target_include_directories(suspension_test_rig PUBLIC 
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CHRONO_INCLUDE_DIRS}
+)
 target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
 
 #--------------------------------------------------------------

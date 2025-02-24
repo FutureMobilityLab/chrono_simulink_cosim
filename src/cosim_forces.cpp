@@ -25,34 +25,34 @@
 //
 // =============================================================================
 
-#include "chrono/core/ChStream.h"
+#include "chrono/utils/ChSocketCommunication.h"
+
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/utils/ChFilters.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/sedan/Sedan.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "chrono_cosimulation/ChCosimulation.h"
-
 #include <filesystem>
+#include <iostream>
 
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::sedan;
 using namespace chrono::utils;
-using namespace chrono::cosimul;
+
 
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector3<> initLoc(0, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -75,7 +75,7 @@ double terrainLength = 100.0;  // size in X direction
 double terrainWidth = 100.0;   // size in Y direction
 
 // Point on chassis tracked by the camera
-ChVector<> trackPoint(0.0, 0.0, 1.75);
+ChVector3<> trackPoint(0.0, 0.0, 1.75);
 
 // Contact method
 ChContactMethod contact_method = ChContactMethod::SMC;
@@ -94,9 +94,9 @@ double render_step_size = 1.0 / 20;  // FPS = 20
 // The tire models used in this simulation are only valid up to moderate 
 // frequencies anyway.
 double cutoff_freq(30); // Hz
-ChButterworth_Lowpass ax_filt(10, step_size, cutoff_freq);
-ChButterworth_Lowpass ay_filt(10, step_size, cutoff_freq);
-ChButterworth_Lowpass az_filt(10, step_size, cutoff_freq);
+ChButterworthLowpass ax_filt(10, step_size, cutoff_freq);
+ChButterworthLowpass ay_filt(10, step_size, cutoff_freq);
+ChButterworthLowpass az_filt(10, step_size, cutoff_freq);
 
 // =============================================================================
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     if ( argc == 2 ) {
         PORT_NUMBER = std::stoi(argv[1]);
     }
-    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+    std::cout << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
 
     // --------------
     // Create systems
@@ -226,10 +226,10 @@ int main(int argc, char* argv[]) {
         ChSocketFramework socket_tools;
 
         // 2) Create the cosimulation interface.
-        ChCosimulation cosim_interface(socket_tools, num_in, num_out);
+        ChSocketCommunication cosim_interface(socket_tools, num_in, num_out);
 
         // 3) Wait client (Simulink) to connect...
-        GetLog() << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
+        std::cout << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
                     "Simulink and press Start...)\n\n";
 
         cosim_interface.WaitConnection(PORT_NUMBER);
@@ -281,17 +281,17 @@ int main(int argc, char* argv[]) {
                 car.Synchronize(my_time, driver_inputs, terrain);
 
                 // Override driveline torque application.
-                car.GetVehicle().GetDriveline()->GetDriveshaft()->SetAppliedTorque(0.0);
-                car.GetVehicle().GetSuspension(0)->GetAxle(LEFT)->SetAppliedTorque(-data_in(1));
-                car.GetVehicle().GetSuspension(0)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(2));
-                car.GetVehicle().GetSuspension(1)->GetAxle(LEFT)->SetAppliedTorque(-data_in(3));
-                car.GetVehicle().GetSuspension(1)->GetAxle(RIGHT)->SetAppliedTorque(-data_in(4));
+                // car.GetVehicle().GetDriveline()->GetDriveshaft()->SetAppliedTorque(0.0);
+                car.GetVehicle().GetSuspension(0)->GetAxle(LEFT)->SetAppliedLoad(-data_in(1));
+                car.GetVehicle().GetSuspension(0)->GetAxle(RIGHT)->SetAppliedLoad(-data_in(2));
+                car.GetVehicle().GetSuspension(1)->GetAxle(LEFT)->SetAppliedLoad(-data_in(3));
+                car.GetVehicle().GetSuspension(1)->GetAxle(RIGHT)->SetAppliedLoad(-data_in(4));
 
                 // Override individual brake actuation.
-                car.GetVehicle().GetBrake(0, LEFT)->Synchronize(data_in(5));
-                car.GetVehicle().GetBrake(0, RIGHT)->Synchronize(data_in(6));
-                car.GetVehicle().GetBrake(1, LEFT)->Synchronize(data_in(7));
-                car.GetVehicle().GetBrake(1, RIGHT)->Synchronize(data_in(8));
+                car.GetVehicle().GetBrake(0, LEFT)->Synchronize(my_time, data_in(5));
+                car.GetVehicle().GetBrake(0, RIGHT)->Synchronize(my_time, data_in(6));
+                car.GetVehicle().GetBrake(1, LEFT)->Synchronize(my_time, data_in(7));
+                car.GetVehicle().GetBrake(1, RIGHT)->Synchronize(my_time, data_in(8));
 
                 // Advance simulation for one timestep for all modules
                 driver.Advance(step_size);
@@ -303,8 +303,8 @@ int main(int argc, char* argv[]) {
                 my_time = car.GetVehicle().GetChTime() - steady_state_time;
 
                 // Get signals that will be filtered.
-                Coordsys chassis_frame = car.GetChassisBody()->coord;
-                ChVector<double> pos_dtdt = car.GetChassisBody()->GetPos_dtdt();
+                ChCoordsys chassis_frame = car.GetChassisBody()->GetCoordsys();
+                ChVector3<double> pos_dtdt = car.GetChassisBody()->GetLinAcc();
                 acc_x = ax_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).x());
                 acc_y = ay_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).y());
                 acc_z = az_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).z());
@@ -333,21 +333,21 @@ int main(int argc, char* argv[]) {
             data_out(2) = car.GetChassis()->GetPos().z();
             
             // Chassis orientation (Euler Angles). (checked)
-            data_out(3) = car.GetChassisBody()->GetRot().Q_to_Euler123().x();
-            data_out(4) = car.GetChassisBody()->GetRot().Q_to_Euler123().y();
-            data_out(5) = car.GetChassisBody()->GetRot().Q_to_Euler123().z();
+            data_out(3) = car.GetChassisBody()->GetRot().GetCardanAnglesXYZ().x();
+            data_out(4) = car.GetChassisBody()->GetRot().GetCardanAnglesXYZ().y();
+            data_out(5) = car.GetChassisBody()->GetRot().GetCardanAnglesXYZ().z();
             
             // Chassis velocity w.r.t. body-fixed frame. (checked)
-            Coordsys chassis_frame = car.GetChassisBody()->coord;
-            ChVector<double> pos_dt = car.GetChassisBody()->GetPos_dt();
+            ChCoordsys chassis_frame = car.GetChassisBody()->GetCoordsys();
+            ChVector3<double> pos_dt = car.GetChassisBody()->GetPosDt();
             data_out(6) = chassis_frame.TransformDirectionParentToLocal(pos_dt).x();
             data_out(7) = chassis_frame.TransformDirectionParentToLocal(pos_dt).y();
             data_out(8) = chassis_frame.TransformDirectionParentToLocal(pos_dt).z();
             
             // Chassis angular velocity. (checked)
-            data_out(9) = car.GetChassisBody()->GetWvel_loc().x();
-            data_out(10) = car.GetChassisBody()->GetWvel_loc().y();
-            data_out(11) = car.GetChassisBody()->GetWvel_loc().z();
+            data_out(9) = car.GetChassisBody()->GetAngVelLocal().x();
+            data_out(10) = car.GetChassisBody()->GetAngVelLocal().y();
+            data_out(11) = car.GetChassisBody()->GetAngVelLocal().z();
 
             // Chassis acceleration w.r.t. body-fixed frame. (checked)
             data_out(12) = acc_x;
@@ -355,9 +355,9 @@ int main(int argc, char* argv[]) {
             data_out(14) = acc_z;
 
             // Chassis angular acceleration. (checked)
-            data_out(15) = car.GetChassisBody()->GetWacc_loc().x();
-            data_out(16) = car.GetChassisBody()->GetWacc_loc().y();
-            data_out(17) = car.GetChassisBody()->GetWacc_loc().z();
+            data_out(15) = car.GetChassisBody()->GetAngAccLocal().x();
+            data_out(16) = car.GetChassisBody()->GetAngAccLocal().y();
+            data_out(17) = car.GetChassisBody()->GetAngAccLocal().z();
 
             // Wheel angular velocity. (could also check GetSpindleAngVel)
             data_out(18) = car.GetVehicle().GetSpindleOmega(0, LEFT);
@@ -411,16 +411,16 @@ int main(int argc, char* argv[]) {
             data_out(50) = driver.GetSteering();
 
             // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
-            ChVector<> wheel_normal = car.GetVehicle().GetWheel(0,LEFT)->GetState().rot.GetYaxis();
-            ChVector<> normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+            ChVector3<> wheel_normal = car.GetVehicle().GetWheel(0,LEFT)->GetState().rot.GetAxisY();
+            ChVector3<> normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(51) = std::atan2(normal.x(), normal.y());
-            wheel_normal = car.GetVehicle().GetWheel(0,RIGHT)->GetState().rot.GetYaxis();
+            wheel_normal = car.GetVehicle().GetWheel(0,RIGHT)->GetState().rot.GetAxisY();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(52) = std::atan2(normal.x(), normal.y());
-            wheel_normal = car.GetVehicle().GetWheel(1,LEFT)->GetState().rot.GetYaxis();
+            wheel_normal = car.GetVehicle().GetWheel(1,LEFT)->GetState().rot.GetAxisY();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(53) = std::atan2(normal.x(),normal.y());
-            wheel_normal = car.GetVehicle().GetWheel(1,RIGHT)->GetState().rot.GetYaxis();
+            wheel_normal = car.GetVehicle().GetWheel(1,RIGHT)->GetState().rot.GetAxisY();
             normal = car.GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
             data_out(54) = std::atan2(normal.x(),normal.y());
 
@@ -433,8 +433,8 @@ int main(int argc, char* argv[]) {
             driver.SetSteering(data_in(0));
             driver.SetBraking(0.); // use no braking at this point.
         }
-    } catch (ChExceptionSocket exception) {
-        GetLog() << " ERROR with socket system: \n" << exception.what() << "\n";
+    } catch (std::exception exception) {
+        std::cout << " ERROR with socket system: \n" << exception.what() << "\n";
     }
 
     return 0;

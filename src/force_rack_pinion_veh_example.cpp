@@ -14,8 +14,6 @@
 //
 // =============================================================================
 
-#include "chrono/core/ChStream.h"
-
 #include "chrono/solver/ChIterativeSolverLS.h"
 
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -23,54 +21,56 @@
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/ChPowertrainAssembly.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/driver/ChIrrGuiDriver.h"
+#include "chrono_vehicle/driver/ChInteractiveDriverIRR.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "chrono_cosimulation/ChCosimulation.h"
+// #include "chrono/utils/ChSocketCommunication.h"
 
 #include "src/vehicle/WheeledVehicleForce.h"
 
 #include <filesystem>
+#include <iostream>
 
 namespace chrono
 {
-
   // =============================================================================
-
-  class Vehicle_Model
-  {
+  class Vehicle_Model {
   public:
     virtual std::string ModelName() const = 0;
     virtual std::string VehicleJSON() const = 0;
-    virtual std::string TireJSON() const = 0;
-    virtual std::string PowertrainJSON() const = 0;
+    virtual std::string TireJSON(unsigned int axle) const = 0;
+    virtual std::string EngineJSON() const = 0;
+    virtual std::string TransmissionJSON() const = 0;
     virtual double CameraDistance() const = 0;
     virtual ChContactMethod ContactMethod() const = 0;
-  };
+};
 
-  class Sedan_Model : public Vehicle_Model
-  {
+class Sedan_Model : public Vehicle_Model {
   public:
     virtual std::string ModelName() const override { return "Sedan"; }
-    virtual std::string VehicleJSON() const override { return "sedan/vehicle/Sedan_Vehicle.json"; }
-    virtual std::string TireJSON() const override
-    {
-      ////return "sedan/tire/Sedan_RigidTire.json";
-      return "sedan/tire/Sedan_TMeasyTire.json";
-      ////return "sedan/tire/Sedan_Pac02Tire.json";
+    virtual std::string VehicleJSON() const override { return "sedan_force/vehicle/Sedan_Vehicle.json"; }
+    virtual std::string TireJSON(unsigned int axle) const override {
+        ////return "sedan_force/tire/Sedan_RigidTire.json";
+        return "sedan_force/tire/Sedan_TMeasyTire.json";
+        // return "sedan_force/tire/Sedan_Pac02Tire.json";
     }
-    virtual std::string PowertrainJSON() const override
-    {
-      return "sedan/powertrain/Sedan_SimpleMapPowertrain.json";
+    virtual std::string EngineJSON() const override {
+        ////return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";
+        return "sedan_force/powertrain/Sedan_EngineShafts.json";
+    }
+    virtual std::string TransmissionJSON() const override {
+        ////return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
+        return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
     }
     virtual double CameraDistance() const override { return 6.0; }
-    virtual ChContactMethod ContactMethod() const { return ChContactMethod::SMC; }
-  };
+    virtual ChContactMethod ContactMethod() const override { return ChContactMethod::SMC; }
+};
 } // namespace chrono
 
 // =============================================================================
@@ -84,8 +84,8 @@ int main(int argc, char *argv[])
   const std::string rigidterrain_file("terrain/RigidPlane.json");
 
   // Initial vehicle position and orientation
-  const chrono::ChVector<> initLoc(0, 0, 0.5);
-  const double initYaw = 20 * chrono::CH_C_DEG_TO_RAD;
+  const chrono::ChVector3<> initLoc(0, 0, 0.5);
+  const double initYaw = 20 * chrono::CH_DEG_TO_RAD;
 
   // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
   const auto chassis_vis_type = chrono::vehicle::VisualizationType::MESH;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   const auto tire_vis_type = chrono::vehicle::VisualizationType::MESH;
 
   // Point on chassis tracked by the camera
-  const chrono::ChVector<> trackPoint(0.0, 0.0, 1.75);
+  const chrono::ChVector3<> trackPoint(0.0, 0.0, 1.75);
 
   // Simulation step size.
   const double step_size = 2e-3;
@@ -121,33 +121,38 @@ int main(int argc, char *argv[])
       vehicle_model.VehicleJSON());
   chrono::vehicle::WheeledVehicleForce car(data_file,
                                            vehicle_model.ContactMethod());
-  car.Initialize(chrono::ChCoordsys<>(initLoc, chrono::Q_from_AngZ(initYaw)));
+  car.Initialize(chrono::ChCoordsys<>(initLoc, chrono::QuatFromAngleZ(initYaw)));
   car.GetChassis()->SetFixed(false);
   car.SetChassisVisualizationType(chassis_vis_type);
   car.SetChassisRearVisualizationType(chassis_vis_type);
+  car.SetSubchassisVisualizationType(chrono::vehicle::VisualizationType::PRIMITIVES);
   car.SetSuspensionVisualizationType(suspension_vis_type);
   car.SetSteeringVisualizationType(steering_vis_type);
   car.SetWheelVisualizationType(wheel_vis_type);
   // car.LockAxleDifferential(0, false);
 
-  // Create and initialize powertrain system.
-  auto powertrain = chrono::vehicle::ReadPowertrainJSON(
-      chrono::vehicle::GetDataFile(vehicle_model.PowertrainJSON()));
+  // Create and initialize the powertrain system
+  auto engine = chrono::vehicle::ReadEngineJSON(chrono::vehicle::GetDataFile(vehicle_model.EngineJSON()));
+  auto transmission = chrono::vehicle::ReadTransmissionJSON(chrono::vehicle::GetDataFile(vehicle_model.TransmissionJSON()));
+  auto powertrain = chrono_types::make_shared<chrono::vehicle::ChPowertrainAssembly>(engine, transmission);
   car.InitializePowertrain(powertrain);
 
   // Create and initialize the tires
-  for (auto &axle : car.GetAxles())
+  for (unsigned int i = 0; i < car.GetNumberAxles(); i++)
   {
-    for (auto &wheel : axle->GetWheels())
+    for (auto &wheel : car.GetAxle(i)->GetWheels())
     {
       auto tire = chrono::vehicle::ReadTireJSON(
-          chrono::vehicle::GetDataFile(vehicle_model.TireJSON()));
+          chrono::vehicle::GetDataFile(vehicle_model.TireJSON(i)));
       car.InitializeTire(tire, wheel, tire_vis_type);
     }
   }
 
   // Containing system
   auto system = car.GetSystem();
+
+    // Associate a collision system
+  system->SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
 
   // Create the terrain (from JSON file)
   chrono::vehicle::RigidTerrain terrain(system, chrono::vehicle::GetDataFile(rigidterrain_file));
@@ -164,11 +169,12 @@ int main(int argc, char *argv[])
   vis->AttachVehicle(&car);
 
   // Create the interactive driver
-  auto driver = chrono::vehicle::ChIrrGuiDriver(*vis);
-  driver.SetSteeringDelta(0.02);
-  driver.SetThrottleDelta(0.02);
-  driver.SetBrakingDelta(0.06);
-  driver.Initialize();
+  auto driver = chrono_types::make_shared<chrono::vehicle::ChInteractiveDriverIRR>(*vis);
+  driver->SetSteeringDelta(0.02);
+  // driver->SetGains(10.0);
+  driver->SetThrottleDelta(0.02);
+  driver->SetBrakingDelta(0.06);
+  driver->Initialize();
 
   // ------------------------
   // Initialize values for simulation loop.
@@ -180,28 +186,32 @@ int main(int argc, char *argv[])
   std::cout << "\nFront Track: " << car.GetWheeltrack(0) << std::endl;
   std::cout << "\nRear Track: " << car.GetWheeltrack(1) << std::endl;
 
+  car.LogSubsystemTypes();
+
   // Enabling realtime attempts to make the simulation run at real time, even
   // if the simulation can run faster.
   car.EnableRealtime(true);
   while (vis->Run())
   {
+    double time = car.GetSystem()->GetChTime();
+
     // Render scene
     vis->BeginScene();
     vis->Render();
     vis->EndScene();
 
     // Get driver inputs
-    chrono::vehicle::DriverInputs driver_inputs = driver.GetInputs();
+    chrono::vehicle::DriverInputs driver_inputs = driver->GetInputs();
 
     // Update modules (process inputs from other modules)
-    double time = car.GetSystem()->GetChTime();
-    driver.Synchronize(time);
+    driver->Synchronize(time);
+    driver_inputs.m_steering *= 2.0;
     car.Synchronize(time, driver_inputs, terrain);
     terrain.Synchronize(time);
-    vis->Synchronize(vehicle_model.ModelName(), driver_inputs);
+    vis->Synchronize(time, driver_inputs);
 
     // Advance simulation for one timestep for all modules
-    driver.Advance(step_size);
+    driver->Advance(step_size);
     car.Advance(step_size);
     terrain.Advance(step_size);
     vis->Advance(step_size);

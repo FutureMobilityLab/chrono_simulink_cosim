@@ -21,35 +21,39 @@
 //
 // =============================================================================
 
-#include "chrono/core/ChStream.h"
+#include <iostream>
+#include <string>
+#include <filesystem>
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/utils/ChFilters.h"
+
+#include "chrono/core/ChVector3.h"
+#include "chrono/core/ChQuaternion.h"
+#include "chrono/core/ChCoordsys.h"
+#include "chrono/core/ChFrame.h"
+#include "chrono/core/ChRotation.h"
+#include "chrono/core/ChMatrixMBD.h"
+#include "chrono/utils/ChSocketCommunication.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/sedan/Sedan.h"
-
-#include "chrono_thirdparty/filesystem/path.h"
-
-#include "chrono_cosimulation/ChCosimulation.h"
-
-#include <filesystem>
 
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::sedan;
 using namespace chrono::utils;
-using namespace chrono::cosimul;
 
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
-ChQuaternion<> initRot(1, 0, 0, 0);
+ChVector3<double> initLoc(0, 0, 1.0);
+ChQuaternion<double> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::MESH;
@@ -71,7 +75,7 @@ double terrainLength = 100.0;  // size in X direction
 double terrainWidth = 100.0;   // size in Y direction
 
 // Point on chassis tracked by the camera
-ChVector<> trackPoint(0.0, 0.0, 1.75);
+ChVector3<double> trackPoint(0.0, 0.0, 1.75);
 
 // Contact method
 ChContactMethod contact_method = ChContactMethod::SMC;
@@ -97,9 +101,9 @@ double debug_step_size = 1.0 / 1;  // FPS = 1
 // The tire models used in this simulation are only valid up to moderate 
 // frequencies anyway.
 double cutoff_freq(30); // Hz
-ChButterworth_Lowpass ax_filt(10, step_size, cutoff_freq);
-ChButterworth_Lowpass ay_filt(10, step_size, cutoff_freq);
-ChButterworth_Lowpass az_filt(10, step_size, cutoff_freq);
+chrono::utils::ChButterworthLowpass ax_filt(10, step_size, cutoff_freq);
+chrono::utils::ChButterworthLowpass ay_filt(10, step_size, cutoff_freq);
+chrono::utils::ChButterworthLowpass az_filt(10, step_size, cutoff_freq);
 
 // =============================================================================
 
@@ -108,10 +112,8 @@ int main(int argc, char* argv[]) {
     // the Chrono Data Directory.
     std::filesystem::path path(argv[0]);
     std::filesystem::path grandparent_path = path.parent_path().parent_path();
-    std::filesystem::path data_dir_path(grandparent_path.string());
-    data_dir_path.append("data").append("");
-    std::filesystem::path veh_data_path(data_dir_path.string());
-    veh_data_path.append("vehicle").append("");
+    std::filesystem::path data_dir_path = grandparent_path / "data";
+    std::filesystem::path veh_data_path = data_dir_path / "vehicle";
     SetChronoDataPath(data_dir_path.string());
     SetDataPath(veh_data_path.string());
 
@@ -120,7 +122,7 @@ int main(int argc, char* argv[]) {
     if ( argc == 2 ) {
         PORT_NUMBER = std::stoi(argv[1]);
     }
-    GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+    std::cout << "Using Port Number: " << PORT_NUMBER << ".\n";
 
     // --------------
     // Create systems
@@ -199,7 +201,7 @@ int main(int argc, char* argv[]) {
     // ------------------------
 
     if (debug_output) {
-        GetLog() << "\n\n============ System Configuration ============\n";
+        std::cout << "\n\n============ System Configuration ============\n";
         car.LogHardpointLocations();
     }
 
@@ -239,13 +241,13 @@ int main(int argc, char* argv[]) {
         data_out.setZero();
 
         // 1) Add a socket framework object.
-        ChSocketFramework socket_tools;
+        chrono::utils::ChSocketFramework socket_tools;
 
         // 2) Create the cosimulation interface.
-        ChCosimulation cosim_interface(socket_tools, num_in, num_out);
+        chrono::utils::ChSocketCommunication cosim_interface(socket_tools, num_in, num_out);
 
         // 3) Wait client (Simulink) to connect...
-        GetLog() << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
+        std::cout << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
                     "Simulink and press Start...)\n\n";
 
         cosim_interface.WaitConnection(PORT_NUMBER);
@@ -269,14 +271,13 @@ int main(int argc, char* argv[]) {
                 vis->BeginScene();
                 vis->Render();
                 vis->EndScene();
-
                 render_frame++;
             }
 
             // Debug logging
             if (debug_output && step_number % debug_steps == 0) {
-                GetLog() << "\n\n============ System Information ============\n";
-                GetLog() << "Time = " << my_time << "\n\n";
+                std::cout << "\n\n============ System Information ============\n";
+                std::cout << "Time = " << my_time << "\n\n";
                 car.DebugLog(OUT_SPRINGS | OUT_SHOCKS | OUT_CONSTRAINTS);
             }
 
@@ -304,102 +305,100 @@ int main(int argc, char* argv[]) {
                 // Increment chrono clock.
                 my_time += step_size;
 
-                // Get signals that will be filtered.
-                Coordsys chassis_frame = car.GetChassisBody()->coord;
-                ChVector<double> pos_dtdt = car.GetChassisBody()->GetPos_dtdt();
-                acc_x = ax_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).x());
-                acc_y = ay_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).y());
-                acc_z = az_filt.Filter(chassis_frame.TransformDirectionParentToLocal(pos_dtdt).z());
+                // Get chassis frame and position
+                ChFrameMoving<double> chassis_frame = car.GetChassisBody()->GetFrameRefToAbs();
+                ChVector3<double> pos_dtdt = chassis_frame.GetPosDt2();
+
+                // Filter acceleration components
+                acc_x = ax_filt.Filter(pos_dtdt.x());
+                acc_y = ay_filt.Filter(pos_dtdt.y());
+                acc_z = az_filt.Filter(pos_dtdt.z());
+
+                // Chassis position
+                data_out(0) = chassis_frame.GetPos().x();
+                data_out(1) = chassis_frame.GetPos().y();
+                data_out(2) = chassis_frame.GetPos().z();
+
+                // Chassis orientation (Euler Angles)
+                ChVector3<double> euler_angles = chassis_frame.GetRot().GetCardanAnglesXYZ();
+                data_out(3) = euler_angles.x();
+                data_out(4) = euler_angles.y();
+                data_out(5) = euler_angles.z();
+
+                // Chassis velocity
+                data_out(6) = chassis_frame.GetPosDt().x();
+                data_out(7) = chassis_frame.GetPosDt().y();
+                data_out(8) = chassis_frame.GetPosDt().z();
+
+                // Chassis angular velocity
+                ChVector3<double> ang_vel = chassis_frame.GetAngVelParent();
+                data_out(9) = ang_vel.x();
+                data_out(10) = ang_vel.y();
+                data_out(11) = ang_vel.z();
+
+                // Chassis acceleration w.r.t. body-fixed frame
+                data_out(12) = acc_x;
+                data_out(13) = acc_y;
+                data_out(14) = acc_z;
+
+                // Chassis angular acceleration
+                ChVector3<double> ang_acc = chassis_frame.GetAngAccParent();
+                data_out(15) = ang_acc.x();
+                data_out(16) = ang_acc.y();
+                data_out(17) = ang_acc.z();
+
+                // Wheel angular velocity
+                data_out(18) = car.GetVehicle().GetSpindleOmega(0, LEFT);
+                data_out(19) = car.GetVehicle().GetSpindleOmega(0, RIGHT);
+                data_out(20) = car.GetVehicle().GetSpindleOmega(1, LEFT);
+                data_out(21) = car.GetVehicle().GetSpindleOmega(1, RIGHT);
+
+                // Tire longitudinal slip ratio
+                data_out(22) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->GetLongitudinalSlip();
+                data_out(23) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->GetLongitudinalSlip();
+                data_out(24) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->GetLongitudinalSlip();
+                data_out(25) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetLongitudinalSlip();
+
+                // Tire lateral slip angle
+                data_out(26) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
+                data_out(27) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
+                data_out(28) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
+                data_out(29) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
+
+                // Wheel torque applied from driveline
+                data_out(30) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, LEFT);
+                data_out(31) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, RIGHT);
+                data_out(32) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, LEFT);
+                data_out(33) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, RIGHT);
+
+                // Wheel torque applied from brakes
+                data_out(34) = car.GetVehicle().GetBrake(0, LEFT)->GetBrakeTorque();
+                data_out(35) = car.GetVehicle().GetBrake(0, RIGHT)->GetBrakeTorque();
+                data_out(36) = car.GetVehicle().GetBrake(1, LEFT)->GetBrakeTorque();
+                data_out(37) = car.GetVehicle().GetBrake(1, RIGHT)->GetBrakeTorque();
+
+                // Steering pinion angle
+                double max_angle = car.GetVehicle().GetMaxSteeringAngle();
+                data_out(38) = driver.GetSteering() / max_angle;
+
+                cosim_interface.SendData(my_time, data_out);  // --> to Simulink
+
+                // B) ----------------- SYNCHRONIZATION
+
+                // B.2) - RECEIVE data
+                cosim_interface.ReceiveData(sim_time, data_in);  // <-- from Simulink
+
+                // - Update the Chrono system with the data received from Simulink.
+                driver.SetSteering(data_in(0));
+                driver.SetThrottle(data_in(1));
+                driver.SetBraking(data_in(2));
+
             }
             step_number++;
 
-            // B) ----------------- SYNCHRONIZATION
-
-            // B.1) - SEND data
-
-            // - Set the Chrono variables into the vector that must
-            //   be sent to Simulink at the next timestep:
-            ChVector<double> cg_location(0,0,0);
-            
-            // Chassis position w.r.t. global frame. (checked)
-            data_out(0) = car.GetChassis()->GetPos().x();
-            data_out(1) = car.GetChassis()->GetPos().y();
-            data_out(2) = car.GetChassis()->GetPos().z();
-            
-            // Chassis orientation (Euler Angles). (checked)
-            data_out(3) = car.GetChassisBody()->GetRot().Q_to_Euler123().x();
-            data_out(4) = car.GetChassisBody()->GetRot().Q_to_Euler123().y();
-            data_out(5) = car.GetChassisBody()->GetRot().Q_to_Euler123().z();
-            
-            // Chassis velocity w.r.t. body-fixed frame. (checked)
-            Coordsys chassis_frame = car.GetChassisBody()->coord;
-            ChVector<double> pos_dt = car.GetChassisBody()->GetPos_dt();
-            data_out(6) = chassis_frame.TransformDirectionParentToLocal(pos_dt).x();
-            data_out(7) = chassis_frame.TransformDirectionParentToLocal(pos_dt).y();
-            data_out(8) = chassis_frame.TransformDirectionParentToLocal(pos_dt).z();
-            
-            // Chassis angular velocity. (checked)
-            data_out(9) = car.GetChassisBody()->GetWvel_loc().x();
-            data_out(10) = car.GetChassisBody()->GetWvel_loc().y();
-            data_out(11) = car.GetChassisBody()->GetWvel_loc().z();
-
-            // Chassis acceleration w.r.t. body-fixed frame. (checked)
-            data_out(12) = acc_x;
-            data_out(13) = acc_y;
-            data_out(14) = acc_z;
-
-            // Chassis angular acceleration. (checked)
-            data_out(15) = car.GetChassisBody()->GetWacc_loc().x();
-            data_out(16) = car.GetChassisBody()->GetWacc_loc().y();
-            data_out(17) = car.GetChassisBody()->GetWacc_loc().z();
-
-            // Wheel angular velocity. (could also check GetSpindleAngVel)
-            data_out(18) = car.GetVehicle().GetSpindleOmega(0, LEFT);
-            data_out(19) = car.GetVehicle().GetSpindleOmega(0, RIGHT);
-            data_out(20) = car.GetVehicle().GetSpindleOmega(1, LEFT);
-            data_out(21) = car.GetVehicle().GetSpindleOmega(1, RIGHT);
-
-            // Tire longitudinal slip ratio. (checked)
-            data_out(22) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->GetLongitudinalSlip();
-            data_out(23) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->GetLongitudinalSlip();
-            data_out(24) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->GetLongitudinalSlip();
-            data_out(25) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetLongitudinalSlip();
-
-            // Tire lateral slip angle. (checked)
-            data_out(26) = car.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
-            data_out(27) = car.GetVehicle().GetAxle(0)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
-            data_out(28) = car.GetVehicle().GetAxle(1)->GetWheel(LEFT)->GetTire()->GetSlipAngle();
-            data_out(29) = car.GetVehicle().GetAxle(1)->GetWheel(RIGHT)->GetTire()->GetSlipAngle();
-
-            // Wheel torque applied from driveline. (checked)
-            data_out(30) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, LEFT);
-            data_out(31) = car.GetVehicle().GetDriveline()->GetSpindleTorque(0, RIGHT);
-            data_out(32) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, LEFT);
-            data_out(33) = car.GetVehicle().GetDriveline()->GetSpindleTorque(1, RIGHT);
-
-            // Wheel torque applied from brakes. (checked)
-            data_out(34) = car.GetVehicle().GetBrake(0, LEFT)->GetBrakeTorque();
-            data_out(35) = car.GetVehicle().GetBrake(0, RIGHT)->GetBrakeTorque();
-            data_out(36) = car.GetVehicle().GetBrake(1, LEFT)->GetBrakeTorque();
-            data_out(37) = car.GetVehicle().GetBrake(1, RIGHT)->GetBrakeTorque();
-
-            // Steering pinion angle.
-            double max_angle = car.GetVehicle().GetMaxSteeringAngle();
-            data_out(38) = driver.GetSteering() / max_angle;
-
-            cosim_interface.SendData(my_time, data_out);  // --> to Simulink
-
-            // B.2) - RECEIVE data
-            cosim_interface.ReceiveData(sim_time, data_in);  // <-- from Simulink
-
-            // - Update the Chrono system with the data received from Simulink.
-            driver.SetSteering(data_in(0));
-            driver.SetThrottle(data_in(1));
-            driver.SetBraking(data_in(2));
-
         }
-    } catch (ChExceptionSocket exception) {
-        GetLog() << " ERROR with socket system: \n" << exception.what() << "\n";
+    } catch (const std::exception& e) {
+        std::cout << " ERROR: " << e.what() << "\n";
     }
 
     return 0;

@@ -20,24 +20,23 @@
 //
 // =============================================================================
 
+#include <iostream>
+#include <string>
+#include <filesystem>
+
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
-#include "chrono_vehicle/utils/ChVehicleVisualSystemIrrlicht.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/ChThreeLinkIRS.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChIrrGuiDriverSTR.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
+#include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRigDriver.h"
+#include "suspension_test_rig/SuspensionTestRig.h"
 
-#include "chrono_thirdparty/filesystem/path.h"
+using namespace chrono;
+using namespace chrono::vehicle;
 
-#include "chrono_cosimulation/ChCosimulation.h"
-
-#include <filesystem>
-
-#include "src/suspension_test_rig/SuspensionTestRig.h"
-
-class Generic_STR_Setup : public chrono::vehicle::STR_Setup
+class Generic_STR_Setup : public STR_Setup
 {
 public:
   virtual std::string SuspensionRigJSON() const override { return "generic/suspensionTest/STR_example.json"; }
@@ -63,7 +62,7 @@ public:
 // auto setup = std::make_shared<Generic_STR_Setup>();
 Generic_STR_Setup setup;
 
-auto rig_mode = chrono::vehicle::RigMode::PLATFORM;
+auto rig_mode = RigMode::PLATFORM;
 
 // Specification of test rig inputs
 // enum class DriverMode {DATA_FILE, INTERACTIVE};
@@ -72,7 +71,7 @@ auto rig_mode = chrono::vehicle::RigMode::PLATFORM;
 // Output collection
 bool output = true;
 bool plot = true;
-std::string out_dir = chrono::GetChronoOutputPath() + "SUSPENSION_TEST_RIG";
+std::string out_dir = std::filesystem::current_path().string() + "/SUSPENSION_TEST_RIG";
 double out_step_size = 1e-2;
 
 // Simulation step size
@@ -86,15 +85,13 @@ int main(int argc, char *argv[])
   // the Chrono Data Directory.
   std::filesystem::path path(argv[0]);
   std::filesystem::path grandparent_path = path.parent_path().parent_path();
-  std::filesystem::path data_dir_path(grandparent_path.string());
-  data_dir_path.append("data").append("");
-  std::filesystem::path veh_data_path(data_dir_path.string());
-  veh_data_path.append("vehicle").append("");
-  chrono::SetChronoDataPath(data_dir_path.string());
-  chrono::vehicle::SetDataPath(veh_data_path.string());
+  std::filesystem::path data_dir_path = grandparent_path / "data";
+  std::filesystem::path veh_data_path = data_dir_path / "vehicle";
+  SetChronoDataPath(data_dir_path.string());
+  SetDataPath(veh_data_path.string());
 
   // Option 1: Create the suspension rig from an existing vehicle model
-  auto rig = chrono::vehicle::CreateFromVehicleModel(rig_mode, &setup);
+  auto rig = CreateFromVehicleModel(rig_mode, &setup);
 
   // Option 2: Create the suspension rig from a JSON rig specification file
   // auto rig = CreateFromSpecFile();
@@ -108,25 +105,26 @@ int main(int argc, char *argv[])
     {
       if (!wheel->GetTire())
       {
-        auto tire = chrono::vehicle::ReadTireJSON(chrono::vehicle::GetDataFile(setup.TireJSON()));
-        rig->GetVehicle().InitializeTire(tire, wheel, chrono::vehicle::VisualizationType::NONE);
+        auto tire = ReadTireJSON(GetDataFile(setup.TireJSON()));
+        rig->GetVehicle().InitializeTire(tire, wheel, VisualizationType::NONE);
       }
     }
   }
 
   // Optional rig settings
-  rig->SetSuspensionVisualizationType(chrono::vehicle::VisualizationType::PRIMITIVES);
-  rig->SetSteeringVisualizationType(chrono::vehicle::VisualizationType::PRIMITIVES);
-  rig->SetSubchassisVisualizationType(chrono::vehicle::VisualizationType::PRIMITIVES);
-  rig->SetWheelVisualizationType(chrono::vehicle::VisualizationType::NONE);
-  rig->SetTireVisualizationType(chrono::vehicle::VisualizationType::MESH);
+  rig->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+  rig->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+  rig->SetSubchassisVisualizationType(VisualizationType::PRIMITIVES);
+  rig->SetWheelVisualizationType(VisualizationType::NONE);
+  rig->SetTireVisualizationType(VisualizationType::MESH);
 
   // Create the vehicle Irrlicht application.
-  auto vis = chrono_types::make_shared<chrono::vehicle::ChVehicleVisualSystemIrrlicht>();
+  auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
   vis->SetWindowTitle("Suspension Test Rig");
-  vis->SetChaseCamera(0.5 * (rig->GetSpindlePos(0, chrono::vehicle::LEFT) + rig->GetSpindlePos(0, chrono::vehicle::RIGHT)), setup.CameraDistance(), 0.5);
+  vis->SetChaseCamera(0.5 * (rig->GetSpindlePos(0, LEFT) + rig->GetSpindlePos(0, RIGHT)), setup.CameraDistance(), 0.5);
 
-  auto driver = chrono_types::make_shared<chrono::vehicle::CosimSuspensionTestRig>();
+  // Replace cosimulation driver with standard driver
+  auto driver = chrono_types::make_shared<CosimSuspensionTestRig>();
   rig->SetDriver(driver);
 
   // Initialize suspension test rig.
@@ -157,7 +155,12 @@ int main(int argc, char *argv[])
     vis->EndScene();
 
     // Update visualization app
-    vis->Synchronize(rig->GetDriverMessage(), {rig->GetSteeringInput(), 0, 0});
+    double my_time = rig->GetVehicle().GetChTime();
+    DriverInputs driver_inputs;
+    driver_inputs.m_steering = rig->GetSteeringInput();
+    driver_inputs.m_throttle = 0;
+    driver_inputs.m_braking = 0;
+    vis->Synchronize(my_time, driver_inputs);
     vis->Advance(step_size);
   }
 

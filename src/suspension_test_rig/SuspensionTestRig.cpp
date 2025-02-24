@@ -1,30 +1,64 @@
 #include "src/suspension_test_rig/SuspensionTestRig.h"
 
-#include "chrono/core/ChTypes.h"
-#include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_vehicle/utils/ChUtilsJSON.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
-#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
+#include <chrono/core/ChTypes.h>
+#include <chrono/utils/ChUtils.h>  // For ChClamp
+#include <chrono_vehicle/ChVehicleModelData.h>
+#include <chrono_vehicle/utils/ChUtilsJSON.h>
+#include <chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h>
+#include <chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h>
 
 namespace chrono::vehicle
 {
+  CosimSuspensionTestRig::CosimSuspensionTestRig() : ChSuspensionTestRigDriver() {}
+
+  CosimSuspensionTestRig::~CosimSuspensionTestRig() {}
+
   /// Set the value for the driver left post displacement input.
   void CosimSuspensionTestRig::SetDisplacementLeft(int axle, double val, double min_val, double max_val)
   {
-    m_displLeft[axle] = ChClamp(val, min_val, max_val);
+    ChSuspensionTestRigDriver::SetDisplacementLeft(axle, val, min_val, max_val);
   }
 
   /// Set the value for the driver right post displacement input.
   void CosimSuspensionTestRig::SetDisplacementRight(int axle, double val, double min_val, double max_val)
   {
-    m_displRight[axle] = ChClamp(val, min_val, max_val);
+    ChSuspensionTestRigDriver::SetDisplacementRight(axle, val, min_val, max_val);
   }
 
   /// Set the value for the driver steering input.
   void CosimSuspensionTestRig::SetSteering(double val, double min_val, double max_val)
   {
-    m_steering = ChClamp(val, min_val, max_val);
+    ChSuspensionTestRigDriver::SetSteering(val, min_val, max_val);
+  }
+
+  double CosimSuspensionTestRig::GetDisplacementLeft(int axle) const
+  {
+    return ChSuspensionTestRigDriver::GetDisplacementLeft()[axle];
+  }
+
+  double CosimSuspensionTestRig::GetDisplacementRight(int axle) const
+  {
+    return ChSuspensionTestRigDriver::GetDisplacementRight()[axle];
+  }
+
+  double CosimSuspensionTestRig::GetSteering() const
+  {
+    return ChSuspensionTestRigDriver::GetSteering();
+  }
+
+  void CosimSuspensionTestRig::Synchronize(double time)
+  {
+    ChSuspensionTestRigDriver::Synchronize(time);
+  }
+
+  std::string CosimSuspensionTestRig::GetInfoMessage() const
+  {
+    return "Cosimulation driver inputs";
+  }
+
+  void CosimSuspensionTestRig::Initialize(int naxles)
+  {
+    ChSuspensionTestRigDriver::Initialize(naxles);
   }
 
   // Function used to create a suspension test rig from a specific vehicle. The
@@ -47,12 +81,12 @@ namespace chrono::vehicle
     }
     case RigMode::PLATFORM:
     {
-      auto rig = chrono_types::make_shared<ChSuspensionTestRigPlatform>(vehicle, setup->TestAxles(), setup->PostLimit());
+      rig = chrono_types::make_shared<ChSuspensionTestRigPlatform>(vehicle, setup->TestAxles(), setup->PostLimit());
       break;
     }
     case RigMode::PUSHROD:
     {
-      auto rig = chrono_types::make_shared<ChSuspensionTestRigPushrod>(vehicle, setup->TestAxles(), setup->PostLimit());
+      rig = chrono_types::make_shared<ChSuspensionTestRigPushrod>(vehicle, setup->TestAxles(), setup->PostLimit());
       break;
     }
     }
@@ -85,4 +119,4 @@ namespace chrono::vehicle
           vehicle::GetDataFile(setup->SuspensionRigJSON()));
     }
   }
-} // chrono::vehicle
+} // namespace chrono::vehicle

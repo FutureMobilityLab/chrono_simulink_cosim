@@ -20,27 +20,30 @@
 //
 // =============================================================================
 
+// Socket headers need to be included first.
+#include "chrono/utils/ChSocket.h"
+#include "chrono/utils/ChSocketCommunication.h"
+
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
-#include "chrono_vehicle/utils/ChVehicleVisualSystemIrrlicht.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/suspension/ChThreeLinkIRS.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChIrrGuiDriverSTR.h"
-#include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
+#include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRigInteractiveDriverIrr.h"
+#include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRigDataDriver.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
-
-#include "chrono_cosimulation/ChCosimulation.h"
 
 #include <filesystem>
 
 #include "src/suspension_test_rig/SuspensionTestRig.h"
+// #include "src/utils/ChSocketCommunication.h"
 
 // using namespace chrono;
 // using namespace chrono::vehicle;
 // using namespace chrono::utils;
-// using namespace chrono::cosimul;
+// 
 
 // =============================================================================
 // Class that adds a MacPherson Strut to the Three Link Independent Rear
@@ -49,15 +52,15 @@
 //   public:
 //     void InitializeSide(VehicleSide side,
 //                         std::shared_ptr<ChBodyAuxRef> chassis,
-//                         const std::vector<ChVector<> >& points,
-//                         const std::vector<ChVector<>>& dirs,
+//                         const std::vector<ChVector3<> >& points,
+//                         const std::vector<ChVector3<>>& dirs,
 //                         double ang_vel) override {
 //             // First create the ThreeLinkIRS.
 //             ChThreeLinkIRS::InitializeSide(side, chassis, points, dirs, ang_vel);
 
 //             // Now add the cylindrical joint between the chassis and trailing arm.
 //             m_spring[side] = chrono_types::make_shared<ChLinkTSDA>();
-//             m_spring[side]->SetNameString(m_name + "_spring" + suffix);
+//             m_spring[side]->SetName(m_name + "_spring" + suffix);
 //             m_spring[side]->Initialize(chassis, m_arm[side], false, points[SPRING_C], points[SPRING_A]);
 //             m_spring[side]->SetRestLength(getSpringRestLength());
 //             m_spring[side]->RegisterForceFunctor(getSpringForceFunctor());
@@ -235,7 +238,7 @@ int main(int argc, char *argv[])
     {
         PORT_NUMBER = std::stoi(argv[1]);
     }
-    chrono::GetLog() << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
+    std::cout << "Using Port Number: " << std::to_string(PORT_NUMBER) << ".\n";
 
     // Option 1: Create the suspension rig from an existing vehicle model
     auto rig = chrono::vehicle::CreateFromVehicleModel(rig_mode, &setup);
@@ -273,12 +276,12 @@ int main(int argc, char *argv[])
     // Create and attach the driver system.
     // switch (driver_mode) {
     //     case DriverMode::DATA_FILE: {
-    //         auto driver = chrono_types::make_shared<ChDataDriverSTR>(vehicle::GetDataFile(setup.DataDriverFile()));
+    //         auto driver = chrono_types::make_shared<ChSuspensionTestRigDataDriver>(vehicle::GetDataFile(setup.DataDriverFile()));
     //         rig->SetDriver(driver);
     //         break;
     //     }
     //     case DriverMode::INTERACTIVE: {
-    //         auto driver = chrono_types::make_shared<ChIrrGuiDriverSTR>(*vis);
+    //         auto driver = chrono_types::make_shared<ChSuspensionTestRigInteractiveDriverIrr>(*vis);
     //         driver->SetSteeringDelta(1.0 / 50);
     //         driver->SetDisplacementDelta(1.0 / 250);
     //         rig->SetDriver(driver);
@@ -297,100 +300,91 @@ int main(int argc, char *argv[])
     vis->AddLogo();
     vis->AttachVehicle(&rig->GetVehicle());
 
-    // Create a cosimulation interface and exchange data with Simulink.
-    try
+    // Prepare the two column vectors of data that will be swapped back
+    // and forth between Chrono and Simulink.
+    int num_in = 3;
+    int num_out = 16;
+    chrono::ChVectorDynamic<double> data_in(num_in);
+    chrono::ChVectorDynamic<double> data_out(num_out);
+    data_in.setZero();
+    data_out.setZero();
+
+    // 1) Add a socket framework object.
+    chrono::utils::ChSocketFramework socket_framework;
+
+    // 2) Create the cosimulation interface.
+    chrono::utils::ChSocketCommunication cosim_interface(socket_framework, num_in, num_out);
+
+    // 3) Wait client (Simulink) to connect...
+    std::cout << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
+                        "Simulink and press Start...)\n\n";
+
+    cosim_interface.WaitConnection(PORT_NUMBER);
+
+    // Create my time and simulink time to synchronize.
+    double my_time = 0;
+    double sim_time = 0;
+
+    // Simulation loop
+    while (vis->Run())
     {
-        // Prepare the two column vectors of data that will be swapped back
-        // and forth between Chrono and Simulink.
-        int num_in = 3;
-        int num_out = 16;
-        chrono::ChVectorDynamic<double> data_in(num_in);
-        chrono::ChVectorDynamic<double> data_out(num_out);
-        data_in.setZero();
-        data_out.setZero();
-
-        // 1) Add a socket framework object.
-        chrono::utils::ChSocketFramework socket_tools;
-
-        // 2) Create the cosimulation interface.
-        chrono::cosimul::ChCosimulation cosim_interface(socket_tools, num_in, num_out);
-
-        // 3) Wait client (Simulink) to connect...
-        chrono::GetLog() << " *** Waiting Simulink to start... *** \n     (load 'Matlab/simple_cosimulation.slx' in "
-                            "Simulink and press Start...)\n\n";
-
-        cosim_interface.WaitConnection(PORT_NUMBER);
-
-        // Create my time and simulink time to synchronize.
-        double my_time = 0;
-        double sim_time = 0;
-
-        // Simulation loop
-        while (vis->Run())
+        std::vector<int> i_axle = setup.TestAxles();
+        // Advance simulation of the rig
+        while (my_time < sim_time)
         {
-            std::vector<int> i_axle = setup.TestAxles();
-            // Advance simulation of the rig
-            while (my_time < sim_time)
-            {
-                // Overwrite driver commands and use cosimulation inputs.
-                // rig->UpdateActuators({data_in[0]}, {0.0}, {data_in[1]}, {0.0});
-                driver->SetSteering(data_in[0]);
-                driver->SetDisplacementLeft(0, data_in[1]);
-                driver->SetDisplacementRight(0, data_in[2]);
+            // Overwrite driver commands and use cosimulation inputs.
+            // rig->UpdateActuators({data_in[0]}, {0.0}, {data_in[1]}, {0.0});
+            driver->SetSteering(data_in[0]);
+            driver->SetDisplacementLeft(0, data_in[1]);
+            driver->SetDisplacementRight(0, data_in[2]);
 
-                rig->Advance(step_size);
+            rig->Advance(step_size);
 
-                // Update chrono clock.
-                my_time = rig->GetVehicle().GetChTime();
-            }
-
-            // Render scene
-            vis->BeginScene();
-            vis->Render();
-            vis->EndScene();
-
-            // Update visualization app
-            vis->Synchronize(rig->GetDriverMessage(), {rig->GetSteeringInput(), 0, 0});
-            vis->Advance(step_size);
-
-            // Send data over cosimulation connection.
-            // Spring forces.
-            data_out(0) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::LEFT).spring_force;
-            data_out(1) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::RIGHT).spring_force;
-
-            // Damper forces.
-            data_out(2) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::LEFT).shock_force;
-            data_out(3) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::RIGHT).shock_force;
-
-            // Camber angles.
-            data_out(4) = rig->GetVehicle().GetTire(i_axle[0], chrono::vehicle::LEFT)->GetCamberAngle();
-            data_out(5) = rig->GetVehicle().GetTire(i_axle[0], chrono::vehicle::RIGHT)->GetCamberAngle();
-
-            // Steer angles.
-            chrono::ChVector<> wheel_normal = rig->GetVehicle().GetWheel(i_axle[0], chrono::vehicle::LEFT)->GetState().rot.GetYaxis();
-            chrono::ChVector<> normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(6) = std::atan2(normal.x(), normal.y());
-            wheel_normal = rig->GetVehicle().GetWheel(i_axle[0], chrono::vehicle::RIGHT)->GetState().rot.GetYaxis();
-            normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
-            data_out(7) = std::atan2(normal.x(), normal.y());
-
-            // Spindle vertical displacement.
-            double spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], chrono::vehicle::LEFT).z();
-            double chassis_z = rig->GetVehicle().GetChassis()->GetPos().z();
-            data_out(8) = chassis_z - spindle_z;
-            spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], chrono::vehicle::RIGHT).z();
-            data_out(9) = chassis_z - spindle_z;
-
-            cosim_interface.SendData(my_time, data_out); // --> to Simulink
-
-            // Receive inputs.
-            cosim_interface.ReceiveData(sim_time, data_in); // <-- from Simulink
+            // Update chrono clock.
+            my_time = rig->GetVehicle().GetChTime();
         }
-    }
-    catch (chrono::utils::ChExceptionSocket exception)
-    {
-        chrono::GetLog() << " ERROR with socket system: \n"
-                         << exception.what() << "\n";
+
+        // Render scene
+        vis->BeginScene();
+        vis->Render();
+        vis->EndScene();
+
+        // Update visualization app
+        vis->Synchronize(my_time, {rig->GetSteeringInput(), 0, 0});
+        vis->Advance(step_size);
+
+        // Send data over cosimulation connection.
+        // Spring forces.
+        data_out(0) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::LEFT)[0].force;
+        data_out(1) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::RIGHT)[0].force;
+
+        // Damper forces.
+        data_out(2) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::LEFT)[1].force;
+        data_out(3) = rig->GetVehicle().GetSuspension(i_axle[0])->ReportSuspensionForce(chrono::vehicle::RIGHT)[1].force;
+
+        // Camber angles.
+        data_out(4) = rig->GetVehicle().GetTire(i_axle[0], chrono::vehicle::LEFT)->GetCamberAngle();
+        data_out(5) = rig->GetVehicle().GetTire(i_axle[0], chrono::vehicle::RIGHT)->GetCamberAngle();
+
+        // Steer angles.
+        chrono::ChVector3<> wheel_normal = rig->GetVehicle().GetWheel(i_axle[0], chrono::vehicle::LEFT)->GetState().rot.GetAxisY();
+        chrono::ChVector3<> normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+        data_out(6) = std::atan2(normal.x(), normal.y());
+        wheel_normal = rig->GetVehicle().GetWheel(i_axle[0], chrono::vehicle::RIGHT)->GetState().rot.GetAxisY();
+        normal = rig->GetVehicle().GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal);
+        data_out(7) = std::atan2(normal.x(), normal.y());
+
+        // Spindle vertical displacement.
+        double spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], chrono::vehicle::LEFT).z();
+        double chassis_z = rig->GetVehicle().GetChassis()->GetPos().z();
+        data_out(8) = chassis_z - spindle_z;
+        spindle_z = rig->GetVehicle().GetSpindlePos(i_axle[0], chrono::vehicle::RIGHT).z();
+        data_out(9) = chassis_z - spindle_z;
+
+        cosim_interface.SendData(my_time, data_out); // --> to Simulink
+
+        // Receive inputs.
+        cosim_interface.ReceiveData(sim_time, data_in); // <-- from Simulink
     }
 
     return 0;

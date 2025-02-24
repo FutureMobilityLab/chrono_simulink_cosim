@@ -60,7 +60,7 @@ namespace chrono
       }
       else
       {
-        throw ChException("Steering type not supported in ReadSteeringJSON.");
+        throw std::runtime_error("Steering type not supported in ReadSteeringJSON.");
       }
 
       return steering;

@@ -5,7 +5,7 @@
 #include <chrono/physics/ChLinkMotorLinearForce.h>
 
 #include "chrono/core/ChRealtimeStep.h"
-#include "chrono/motion_functions/ChFunction_Sine.h"
+#include "chrono/functions/ChFunctionConst.h"
 
 #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
@@ -36,7 +36,7 @@ class RackPinionSimulation {
   public:
     RackPinionSimulation() {
       // System setup
-      m_system.Set_G_acc(ChVector<>(0, 0, 0));
+      m_system.SetGravitationalAcceleration(ChVector3<>(0, 0, 0));
       
       // Create bodies
       CreateBodies();
@@ -50,9 +50,9 @@ class RackPinionSimulation {
       m_vis->Initialize();
       m_vis->AddLogo();
       m_vis->AddSkyBox();
-      m_vis->AddCamera(chrono::ChVector<>(1, 3, -7));
+      m_vis->AddCamera(chrono::ChVector3<>(1, 3, -7));
       m_vis->AddTypicalLights();
-      m_vis->AddLightWithShadow(chrono::ChVector<>(20.0, 35.0, -25.0), chrono::ChVector<>(0, 0, 0), 55, 20, 55, 35, 512,
+      m_vis->AddLightWithShadow(chrono::ChVector3<>(20.0, 35.0, -25.0), chrono::ChVector3<>(0, 0, 0), 55, 20, 55, 35, 512,
                               chrono::ChColor(0.6f, 0.8f, 1.0f));
       m_vis->EnableShadows();
     }
@@ -63,23 +63,23 @@ class RackPinionSimulation {
 
     void CreateBodies() {
       auto floorBody = chrono_types::make_shared<ChBodyEasyBox>(20, 2, 20, 3000);
-      floorBody->SetPos(ChVector<>(0, -2, 0));
-      floorBody->SetBodyFixed(true);
+      floorBody->SetPos(ChVector3<>(0, -2, 0));
+      floorBody->SetFixed(true);
       floorBody->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/blue.png"));
       m_system.Add(floorBody);
 
       // Ground body
       m_ground = chrono_types::make_shared<ChBodyEasyBox>(4., 0.3, 0.6, 1000);
-      m_ground->SetNameString("ground");
-      m_ground->SetBodyFixed(true);
+      m_ground->SetName("ground");
+      m_ground->SetFixed(true);
       m_system.Add(m_ground);
 
       // Rack body
       m_rack = chrono_types::make_shared<ChBodyEasyBox>(0.4, 0.2, 0.5, 1000);
-      m_rack->SetNameString("rack");
+      m_rack->SetName("rack");
       // m_rack->SetMass(2.0);
-      // m_rack->SetInertiaXX(ChVector<>(0.5, 0.5, 0.5));
-      m_rack->SetPos(ChVector<>(0, 0.3, 0));
+      // m_rack->SetInertiaXX(ChVector3<>(0.5, 0.5, 0.5));
+      m_rack->SetPos(ChVector3<>(0, 0.3, 0));
       m_rack->GetVisualShape(0)->SetColor(ChColor(0.6f, 0.6f, 0.0f));
       m_system.Add(m_rack);
     }
@@ -87,9 +87,9 @@ class RackPinionSimulation {
     void CreateConstraints() {
       // // Prismatic constraint for rack (only allow X-axis translation)
       // m_rackConstraint = chrono_types::make_shared<chrono::ChLinkLockPrismatic>();
-      // m_rackConstraint->SetNameString("RackConstraint");
+      // m_rackConstraint->SetName("RackConstraint");
       // m_rackConstraint->Initialize(m_rack, m_ground, 
-      //     chrono::ChCoordsys<>(chrono::ChVector<>(0, 0, 0), 
+      //     chrono::ChCoordsys<>(chrono::ChVector3<>(0, 0, 0), 
       //     chrono::Q_from_AngAxis(0, chrono::VECT_Z)));
       // m_system.Add(m_rackConstraint);
 
@@ -99,10 +99,10 @@ class RackPinionSimulation {
           m_rack,     // First connected body
           m_ground,   // Second connected body
           false,      // Use absolute coordinates
-          ChVector<>(0, 0, 0),   // Connection point on first body
-          ChVector<>(0, 0, 0)    // Connection point on second body
+          ChVector3<>(0, 0, 0),   // Connection point on first body
+          ChVector3<>(0, 0, 0)    // Connection point on second body
       );
-      m_springDamper->SetNameString("TSDA");
+      m_springDamper->SetName("TSDA");
       m_springDamper->SetSpringCoefficient(5000.0);  // Spring stiffness (N/m)
       m_springDamper->SetDampingCoefficient(100.0);  // Damping coefficient (Ns/m)
       m_springDamper->SetRestLength(0.0);  // Initial separation between connection points
@@ -111,18 +111,18 @@ class RackPinionSimulation {
       // Linear Force Actuator
       m_forceActuator = chrono_types::make_shared<ChLinkMotorLinearForce>();
       m_forceActuator->Initialize(m_rack, m_ground, ChFrame<>(0., 0., 0.));
-      m_forceActuator->SetNameString("LinearForceActuator");
+      m_forceActuator->SetName("LinearForceActuator");
       m_system.Add(m_forceActuator);
       
       // Create a constant torque function
-      auto forceFun = chrono_types::make_shared<ChFunction_Const>(5000.0);
+      auto forceFun = chrono_types::make_shared<ChFunctionConst>(5000.0);
       m_forceActuator->SetForceFunction(forceFun);
     }
 
     void Simulate(double totalTime, double timeStep) {
       // Simulation loop
-      GetLog() << "\n\n\nHere's the system hierarchy: \n\n ";
-      m_system.ShowHierarchy(GetLog());
+      std::cout << "\n\n\nHere's the system hierarchy: \n\n ";
+      m_system.ShowHierarchy(std::cout);
 
       for (double t = 0; t < totalTime; t += timeStep) {
         if (!m_vis->Run()) {
@@ -141,7 +141,7 @@ class RackPinionSimulation {
           std::cout << "Time:" << t 
                     << "\tInput Force:" << m_forceActuator->GetMotorForce()
                     << "\tRack Displacement: " << m_rack->GetPos() 
-                    << "\tRack Velocity: " << m_rack->GetPos_dt()
+                    << "\tRack Velocity: " << m_rack->GetPosDt()
                     << "\tSpring Force: " << m_springDamper->GetForce() 
                     << std::endl;
         }
