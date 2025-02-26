@@ -1,8 +1,12 @@
 {
     "cmake.configureOnOpen": true,
     "C_Cpp.errorSquiggles": "enabled",
+    "cmake.sourceDirectory": "${workspaceFolder}/chrono_simulink_cosim",
+    "cmake.buildDirectory": "${workspaceFolder}/chrono_simulink_cosim/build",
+    "cmake.generator": "Visual Studio 16 2019",
     "cmake.configureSettings": {
-        "Chrono_DIR":"C:\\Users\\15309\\Project_Chrono\\chrono_build\\cmake"},
+        "Chrono_DIR":"C:\\Users\\15309\\Project_Chrono\\chrono_build\\cmake",
+    },
     "cmake.defaultVariants": {
         "buildType": {
             "default": "release",
@@ -30,6 +34,14 @@
                 }
             }
         }
+    },
+    //"cmake.generator": "Ninja",
+    "[cpp]": {
+        "editor.wordBasedSuggestions": "off",
+        "editor.semanticHighlighting.enabled": true,
+        "editor.stickyScroll.defaultModel": "foldingProviderModel",
+        "editor.suggest.insertMode": "replace",
+        "editor.formatOnSave": true,
     },
     "files.associations": {
         "memory": "cpp",
@@ -118,6 +130,10 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "adolcforward": "cpp",
+        "mprealsupport": "cpp",
+        "any": "cpp",
+        "variant": "cpp"
     }
 }

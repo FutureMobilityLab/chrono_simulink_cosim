@@ -10,7 +10,7 @@
 #--------------------------------------------------------------
  
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 
 #--------------------------------------------------------------
 # === 1 === 
@@ -61,6 +61,10 @@ project(chrono_simulink_cosim)
 # In this example, we only request the Irrlicht module (required)
 # and, for demonstration purposes, the PardisoMKL module (optional)
 #--------------------------------------------------------------
+
+find_package(pybind11 REQUIRED)
+# add_subdirectory(${pybind11_DIR})
+# include_directories(${pybind11_DIR}/include)
 
 LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}/../Chrono/lib")
 find_package(Chrono
@@ -234,6 +238,24 @@ target_include_directories(suspension_test_rig PUBLIC
     ${CHRONO_INCLUDE_DIRS}
 )
 target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
+
+add_library(vehicle_interface MODULE src/python/vehicle_interface.cpp)
+
+target_link_libraries(vehicle_interface PRIVATE
+    steering utils vehicle ${CHRONO_LIBRARIES} pybind11::module
+)
+target_include_directories(vehicle_interface PUBLIC
+    ${CHRONO_INCLUDE_DIRS} 
+    ${pybind11_INCLUDE_DIRS}
+)
+set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
+# target_link_libraries(vehicle_interface ${CHRONO_LIBRARIES} steering utils vehicle)
+# target_include_directories(vehicle_interface PUBLIC 
+#     ${CHRONO_INCLUDE_DIRS}
+#     ${pybind11_DIR}/include
+# )
+
+set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
 
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
