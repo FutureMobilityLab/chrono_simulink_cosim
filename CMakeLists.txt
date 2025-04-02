@@ -147,39 +147,6 @@ endif()
 # files in your project. 
 #--------------------------------------------------------------
 
-# Get a list of all .cpp files in the 'src' directory
-file(GLOB SOURCES "src/*.cpp")
-
-# Create an executable for each source file
-foreach(SOURCE_FILE ${SOURCES})
-    # Extract the filename without extension
-    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
-
-    # Add the executable
-    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
-
-#--------------------------------------------------------------
-# Set properties for your executable target
-# 
-# Note that here we define a macro CHRONO_DATA_DIR which will
-# contain the path to the Chrono data directory, either in its
-# source tree (if using a build version of Chrono), or in its
-# install tree (if using an installed version of Chrono).
-#--------------------------------------------------------------
-
-  target_compile_definitions(${EXECUTABLE_NAME} PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"")
-  target_compile_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_CXX_FLAGS})
-  target_link_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_LINKER_FLAGS})
-  target_compile_features(${EXECUTABLE_NAME} PUBLIC "cxx_std_17")
-
-#--------------------------------------------------------------
-# Link to Chrono libraries and dependency libraries
-#--------------------------------------------------------------
-
-  target_link_libraries(${EXECUTABLE_NAME} ${CHRONO_LIBRARIES} vehicle suspension_test_rig)
-
-endforeach()
-
 add_compile_definitions(CH_API_COMPILE_VEHICLE)
 
 add_library(steering 
@@ -239,23 +206,148 @@ target_include_directories(suspension_test_rig PUBLIC
 )
 target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
 
-add_library(vehicle_interface MODULE src/python/vehicle_interface.cpp)
+add_library(
+  simulation_interface 
+  src/simulation_interface/SimulationInterface.cpp
+  src/simulation_interface/SimulationInterface.h  
+)
+# target_compile_options(simulation_interface PUBLIC ${CHRONO_CXX_FLAGS})
+set_target_properties(simulation_interface PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+)
+target_include_directories(simulation_interface PUBLIC
+  ${CHRONO_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}
+)
+# target_link_options(simulation_interface PUBLIC ${CHRONO_LINKER_FLAGS})
+target_link_libraries(simulation_interface 
+  ${CHRONO_LIBRARIES}
+  vehicle
+)
 
-target_link_libraries(vehicle_interface PRIVATE
-    steering utils vehicle ${CHRONO_LIBRARIES} pybind11::module
+add_library(
+  simulation_interface_c_api MODULE
+  src/simulation_interface/SimulationInterface_c_api.cpp
+  src/simulation_interface/SimulationInterface_c_api.h
 )
-target_include_directories(vehicle_interface PUBLIC
-    ${CHRONO_INCLUDE_DIRS} 
-    ${pybind11_INCLUDE_DIRS}
+set_target_properties(simulation_interface_c_api PROPERTIES 
+	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\";SIMULATION_INTERFACE_EXPORTS"
+	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
-set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
-# target_link_libraries(vehicle_interface ${CHRONO_LIBRARIES} steering utils vehicle)
-# target_include_directories(vehicle_interface PUBLIC 
-#     ${CHRONO_INCLUDE_DIRS}
-#     ${pybind11_DIR}/include
+target_include_directories(simulation_interface_c_api PUBLIC
+  ${CHRONO_INCLUDE_DIRS}
+  ${CMAKE_SOURCE_DIR}
+)
+target_link_libraries(simulation_interface_c_api 
+  ${CHRONO_LIBRARIES}
+  vehicle
+  simulation_interface
+)
+
+# Get a list of all .cpp files in the 'src' directory
+file(GLOB SOURCES "src/*.cpp")
+
+# Create an executable for each source file
+foreach(SOURCE_FILE ${SOURCES})
+    # Extract the filename without extension
+    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
+
+    # Add the executable
+    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
+
+#--------------------------------------------------------------
+# Set properties for your executable target
+# 
+# Note that here we define a macro CHRONO_DATA_DIR which will
+# contain the path to the Chrono data directory, either in its
+# source tree (if using a build version of Chrono), or in its
+# install tree (if using an installed version of Chrono).
+#--------------------------------------------------------------
+
+  target_compile_definitions(${EXECUTABLE_NAME} PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"")
+  target_compile_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_CXX_FLAGS})
+  target_link_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_LINKER_FLAGS})
+  target_compile_features(${EXECUTABLE_NAME} PUBLIC "cxx_std_17")
+
+#--------------------------------------------------------------
+# Link to Chrono libraries and dependency libraries
+#--------------------------------------------------------------
+
+  target_link_libraries(${EXECUTABLE_NAME} 
+    ${CHRONO_LIBRARIES} 
+    vehicle 
+    simulation_interface 
+    suspension_test_rig
+  )
+
+endforeach()
+
+# set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
+# add_library(vehicle_interface MODULE src/python/vehicle_interface.cpp)
+# target_link_libraries(vehicle_interface PRIVATE
+#     steering utils vehicle ${CHRONO_LIBRARIES} pybind11::module
+# )
+# target_include_directories(vehicle_interface PUBLIC
+#     ${CHRONO_INCLUDE_DIRS} 
+#     ${pybind11_INCLUDE_DIRS}
+# )
+# set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
+# # target_link_libraries(vehicle_interface ${CHRONO_LIBRARIES} steering utils vehicle)
+# # target_include_directories(vehicle_interface PUBLIC 
+# #     ${CHRONO_INCLUDE_DIRS}
+# #     ${pybind11_DIR}/include
+# # )
+
+# # TEST INTERFACE (DELETE THIS AFTER PROVING PYBIND WORKS)
+# add_library(test_interface MODULE src/python/test_interface.cpp)
+
+# target_link_libraries(test_interface PRIVATE
+#     pybind11::module
+#     ${CHRONO_LIBRARIES}  # Add Chrono libraries just in case
 # )
 
-set_target_properties(vehicle_interface PROPERTIES PREFIX "" SUFFIX ".pyd")
+# target_include_directories(test_interface PUBLIC
+#     ${pybind11_INCLUDE_DIRS}
+#     ${CHRONO_INCLUDE_DIRS}  # Add Chrono includes
+# )
+
+# # Set Python-specific properties for the module
+# set_target_properties(test_interface PROPERTIES
+#     PREFIX ""
+#     SUFFIX ".pyd"
+#     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+#     LIBRARY_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
+#     LIBRARY_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
+#     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+#     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}"
+#     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}"
+#     VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+# )
+
+# # Copy Python DLL to the build directory on Windows
+# if(WIN32)
+#     add_custom_command(TARGET test_interface POST_BUILD
+#         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#             "$<TARGET_FILE:test_interface>"
+#             "${CMAKE_BINARY_DIR}/$<TARGET_FILE_NAME:test_interface>"
+#     )
+    
+#     # Copy Visual C++ Runtime DLLs if using MSVC
+#     if(MSVC)
+#         include(InstallRequiredSystemLibraries)
+#         add_custom_command(TARGET test_interface POST_BUILD
+#             COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#                 ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+#                 "${CMAKE_BINARY_DIR}"
+#         )
+#     endif()
+# endif()
+
+# # Ensure the output directory exists
+# file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR})
 
 #--------------------------------------------------------------
 # === 4 (OPTIONAL) ===
