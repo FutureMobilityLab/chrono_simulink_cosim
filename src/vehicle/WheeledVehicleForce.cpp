@@ -439,4 +439,14 @@ namespace chrono::vehicle
     // Invoke base class method
     ChWheeledVehicle::Initialize(chassisPos, chassisFwdVel);
   }
+
+  double WheeledVehicleForce::GetPinionAngle() {
+    std::shared_ptr<ChSteering> steering = GetSteering(0);
+    
+    auto rack = std::dynamic_pointer_cast<ChRackPinionForce>(steering);
+    if (rack) {
+      return rack->GetPinionAngle();
+    }
+    throw std::runtime_error("Invalid steering subsystem type.");
+  }
 } // end namespace chrono::vehicle

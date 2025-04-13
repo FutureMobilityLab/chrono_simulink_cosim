@@ -53,10 +53,6 @@ namespace chrono::vehicle
     /// Remove visualization assets for the steering subsystem.
     virtual void RemoveVisualizationAssets() override;
 
-    /// @brief Apply a force to the pinion.
-    /// @param force The force to apply [N].
-    void ApplyForce(double force);
-
     /// Update the state of this steering subsystem at the current time.
     /// The steering subsystem is provided the current steering driver input (a value between -1 and +1).  Positive
     /// steering input indicates steering to the left. This function is called during the vehicle update.
@@ -66,6 +62,9 @@ namespace chrono::vehicle
 
     /// Log current constraint violations.
     virtual void LogConstraintViolations() override;
+
+    /// Return the current steering angle (in radians).
+    double GetPinionAngle();
 
   protected:
     virtual void InitializeInertiaProperties() override;

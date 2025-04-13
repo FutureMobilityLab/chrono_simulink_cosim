@@ -16,8 +16,8 @@ namespace chrono {
     class VehicleInterface {
     public:
         VehicleInterface(const std::string& vehicle_json, const std::string& engine_json, const std::string& transmission_json, 
-                         const std::vector<std::string>& tire_jsons, ChContactMethod contact_method)
-            : m_vehicle(vehicle_json, contact_method) {
+                         const std::vector<std::string>& tire_jsons)
+            : m_vehicle(vehicle_json, ChContactMethod::SMC) {
             
             m_vehicle.Initialize(ChCoordsys<>(ChVector3<>(0, 0, 0.5), chrono::QuatFromAngleZ(0)));
             m_vehicle.GetChassis()->SetFixed(false);
@@ -108,7 +108,7 @@ namespace chrono {
 
 PYBIND11_MODULE(vehicle_interface, m) {
     py::class_<chrono::VehicleInterface>(m, "VehicleInterface")
-        .def(py::init<const std::string&, const std::string&, const std::string&, const std::vector<std::string>&, chrono::ChContactMethod>())
+        .def(py::init<const std::string&, const std::string&, const std::string&, const std::vector<std::string>&>())
         .def("set_inputs", &chrono::VehicleInterface::SetInputs)
         .def("advance", &chrono::VehicleInterface::Advance)
         .def("get_state", &chrono::VehicleInterface::GetState);

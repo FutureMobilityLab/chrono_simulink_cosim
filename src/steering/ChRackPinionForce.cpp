@@ -102,8 +102,9 @@ namespace chrono::vehicle
   {
     // Interpret the steering input as a torque and scale it by radius to get
     // linear force on the rack.
-    double force = driver_inputs.m_steering * GetPinionRadius() * 2000.;
-    double angle = m_motor->GetMotorPos() / GetPinionRadius();
+    const double pinion_radius = GetPinionRadius();
+    const double force = driver_inputs.m_steering * pinion_radius;
+    const double angle = m_motor->GetMotorPos() / pinion_radius;
 
     if (auto fun = std::dynamic_pointer_cast<ChFunctionConst>(
             m_motor->GetForceFunction()))
@@ -174,6 +175,10 @@ namespace chrono::vehicle
       std::cout << "Actuator            ";
       std::cout << "  " << C(0) << "  ";
     }
+  }
+
+  double ChRackPinionForce::GetPinionAngle() {
+    return GetSteeringLinkCOM() / GetPinionRadius();
   }
 
   // -----------------------------------------------------------------------------

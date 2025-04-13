@@ -207,7 +207,7 @@ target_include_directories(suspension_test_rig PUBLIC
 target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
 
 add_library(
-  simulation_interface 
+  simulation_interface SHARED
   src/simulation_interface/SimulationInterface.cpp
   src/simulation_interface/SimulationInterface.h  
 )
@@ -216,15 +216,19 @@ set_target_properties(simulation_interface PROPERTIES
 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+	WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 target_include_directories(simulation_interface PUBLIC
   ${CHRONO_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}
 )
 # target_link_options(simulation_interface PUBLIC ${CHRONO_LINKER_FLAGS})
-target_link_libraries(simulation_interface 
+target_link_libraries(simulation_interface PUBLIC
   ${CHRONO_LIBRARIES}
   vehicle
+  # suspension_test_rig
+  utils
+  steering
 )
 
 add_library(
@@ -234,7 +238,7 @@ add_library(
 )
 set_target_properties(simulation_interface_c_api PROPERTIES 
 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
-	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\";SIMULATION_INTERFACE_EXPORTS"
+	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
 target_include_directories(simulation_interface_c_api PUBLIC
@@ -243,7 +247,7 @@ target_include_directories(simulation_interface_c_api PUBLIC
 )
 target_link_libraries(simulation_interface_c_api 
   ${CHRONO_LIBRARIES}
-  vehicle
+  # vehicle
   simulation_interface
 )
 
@@ -276,11 +280,21 @@ foreach(SOURCE_FILE ${SOURCES})
 # Link to Chrono libraries and dependency libraries
 #--------------------------------------------------------------
 
-  target_link_libraries(${EXECUTABLE_NAME} 
+  add_dependencies(${EXECUTABLE_NAME}
+    vehicle
+    simulation_interface
+    suspension_test_rig
+    utils
+    steering
+  )
+  
+  target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     ${CHRONO_LIBRARIES} 
     vehicle 
     simulation_interface 
     suspension_test_rig
+    utils
+    steering
   )
 
 endforeach()

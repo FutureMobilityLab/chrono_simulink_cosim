@@ -1,8 +1,3 @@
-// A copy of Project Chrono WheeledVehicle to include json construction of
-// vehicle force-based actuators. This is ultimately necessary because
-// WheeledVehicle::Create() calls ReadSteeringJSON(), which does not support the
-// custom force-based actuator classes created in this project.
-
 #ifndef WHEELED_VEHICLEFORCE_H
 #define WHEELED_VEHICLEFORCE_H
 
@@ -37,6 +32,8 @@ namespace chrono::vehicle
     virtual double GetWheelbase() const override { return m_wheelbase; }
     virtual double GetMinTurningRadius() const override { return m_turn_radius; }
     virtual double GetMaxSteeringAngle() const override { return m_steer_angle; }
+
+    double GetPinionAngle();
 
     virtual void Initialize(const ChCoordsys<> &chassisPos, double chassisFwdVel = 0) override;
 
