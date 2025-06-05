@@ -11,6 +11,7 @@
  
 
 cmake_minimum_required(VERSION 3.14)
+cmake_policy(SET CMP0091 NEW) # Enable new policy for MSVC runtime library flags
 
 #--------------------------------------------------------------
 # === 1 === 
@@ -19,6 +20,28 @@ cmake_minimum_required(VERSION 3.14)
 
 set(CMAKE_CXX_STANDARD 17)
 project(chrono_simulink_cosim)
+
+# Add option to control shared/static library building
+option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+message(STATUS "Building with shared libraries: ${BUILD_SHARED_LIBS}")
+
+# If Chrono is in static mode, make sure to use static runtime with MSVC
+if(NOT BUILD_SHARED_LIBS AND MSVC)
+  # More direct approach to forcing MT runtime
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+  
+  # Also explicitly set compiler flags
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd") 
+  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+  
+  # Turn off any /MD flags completely
+  string(REPLACE "/MD" "/MT" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+  string(REPLACE "/MDd" "/MTd" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+  string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE}")
+  string(REPLACE "/MDd" "/MTd" CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG}")
+endif()
 
 #--------------------------------------------------------------
 # === 2 ===
@@ -68,21 +91,35 @@ find_package(pybind11 REQUIRED)
 
 LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}/../Chrono/lib")
 find_package(Chrono
-             COMPONENTS Vehicle Irrlicht Cosimulation
+             COMPONENTS Vehicle Irrlicht FMI
              OPTIONAL_COMPONENTS PardisoMKL Postprocess
              CONFIG)
 
-# Get GTest. This is much easier than having the user install GTest on windows.
-# The URL is a the hash to a commit for the googletest version. It is a good
-# idea to keep this updated.
-include(FetchContent)
-FetchContent_Declare(
-  googletest
-  URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+# When using static libraries, we need additional definitions
+if(NOT BUILD_SHARED_LIBS)
+  add_definitions(-DCHRONO_STATIC_LINK)
+endif()
+
+# Depending on the platform, static linking may require additional libraries
+if(UNIX AND NOT APPLE)
+  find_package(Threads REQUIRED)
+  list(APPEND CHRONO_LIBRARIES ${CMAKE_THREAD_LIBS_INIT} dl)
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    list(APPEND CHRONO_LIBRARIES rt)
+  endif()
+endif()
+
+# # Get GTest. This is much easier than having the user install GTest on windows.
+# # The URL is a the hash to a commit for the googletest version. It is a good
+# # idea to keep this updated.
+# include(FetchContent)
+# FetchContent_Declare(
+#   googletest
+#   URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+# )
+# # For Windows: Prevent overriding the parent project's compiler/linker settings
+# set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+# FetchContent_MakeAvailable(googletest)
 
 # add_subdirectory(src)
 # add_subdirectory(test)
@@ -94,6 +131,57 @@ FetchContent_MakeAvailable(googletest)
 if (NOT Chrono_FOUND)
   message("Could not find Chrono or one of its required modules")
   return()
+endif()
+
+#--------------------------------------------------------------
+# Set up FMI functionality
+#--------------------------------------------------------------
+
+# Get the FMU tools directory
+if(NOT DEFINED FMU_TOOLS_DIR)
+  # Try several possible locations for the FMU tools
+  if(CHRONO_INCLUDE_DIRS)
+    foreach(dir ${CHRONO_INCLUDE_DIRS})
+      if(EXISTS "${dir}/chrono_fmi/fmi2/ChFmuToolsExport.h")
+        set(FMU_TOOLS_DIR "${dir}/chrono_fmi" CACHE PATH "Path to Chrono FMI tools")
+        break()
+      endif()
+    endforeach()
+  endif()
+  
+  # Check additional common locations
+  if(NOT FMU_TOOLS_DIR)
+    set(_potential_dirs
+      "${CHRONO_DIR}/include/chrono_fmi"
+      "${CHRONO_DIR}/include/chrono/chrono_fmi"
+      "${CHRONO_DIR}/../chrono/src/chrono_fmi"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../chrono/src/chrono_fmi"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../chrono/include/chrono_fmi"
+    )
+    
+    foreach(dir ${_potential_dirs})
+      if(EXISTS "${dir}/fmi2/ChFmuToolsExport.h")
+        set(FMU_TOOLS_DIR "${dir}" CACHE PATH "Path to Chrono FMI tools")
+        break()
+      endif()
+    endforeach()
+  endif()
+endif()
+
+if(FMU_TOOLS_DIR)
+  message(STATUS "Found FMU tools directory: ${FMU_TOOLS_DIR}")
+else()
+  message(WARNING "Could not find FMU tools directory. Building without FMU support.")
+  # We'll continue without failing, but disable FMU build
+  set(BUILD_FMU OFF)
+endif()
+
+# Enable FetchContent for FMU tools if we found the directory
+if(FMU_TOOLS_DIR)
+  include(FetchContent)
+  set(FMI_PLATFORM "${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+  message(STATUS "FMI platform: ${FMI_PLATFORM}")
+  set(BUILD_FMU ON)
 endif()
 
 #--------------------------------------------------------------
@@ -157,6 +245,9 @@ set_target_properties(steering PROPERTIES
 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}")
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(steering PRIVATE CHRONO_STATIC_LINK)
+endif()
 target_include_directories(steering PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${CHRONO_INCLUDE_DIRS}
@@ -171,6 +262,9 @@ set_target_properties(utils PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(utils PRIVATE CHRONO_STATIC_LINK)
+endif()
 target_include_directories(utils PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${CHRONO_INCLUDE_DIRS}
@@ -185,6 +279,9 @@ set_target_properties(vehicle PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(vehicle PRIVATE CHRONO_STATIC_LINK)
+endif()
 target_include_directories(vehicle PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${CHRONO_INCLUDE_DIRS}
@@ -199,6 +296,9 @@ set_target_properties(suspension_test_rig PROPERTIES
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 )
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(suspension_test_rig PRIVATE CHRONO_STATIC_LINK)
+endif()
 target_include_directories(suspension_test_rig PUBLIC 
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src
@@ -207,49 +307,123 @@ target_include_directories(suspension_test_rig PUBLIC
 target_link_libraries(suspension_test_rig ${CHRONO_LIBRARIES})
 
 add_library(
-  simulation_interface SHARED
+  simulation_interface # SHARED
   src/simulation_interface/SimulationInterface.cpp
   src/simulation_interface/SimulationInterface.h  
 )
-# target_compile_options(simulation_interface PUBLIC ${CHRONO_CXX_FLAGS})
 set_target_properties(simulation_interface PROPERTIES 
 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
 	WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
+if(NOT BUILD_SHARED_LIBS)
+  target_compile_definitions(simulation_interface PRIVATE CHRONO_STATIC_LINK)
+endif()
 target_include_directories(simulation_interface PUBLIC
   ${CHRONO_INCLUDE_DIRS}
   ${CMAKE_SOURCE_DIR}
 )
-# target_link_options(simulation_interface PUBLIC ${CHRONO_LINKER_FLAGS})
 target_link_libraries(simulation_interface PUBLIC
   ${CHRONO_LIBRARIES}
   vehicle
-  # suspension_test_rig
-  utils
   steering
+  utils
+  # suspension_test_rig
 )
 
-add_library(
-  simulation_interface_c_api MODULE
-  src/simulation_interface/SimulationInterface_c_api.cpp
-  src/simulation_interface/SimulationInterface_c_api.h
-)
-set_target_properties(simulation_interface_c_api PROPERTIES 
-	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
-	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
-)
-target_include_directories(simulation_interface_c_api PUBLIC
-  ${CHRONO_INCLUDE_DIRS}
-  ${CMAKE_SOURCE_DIR}
-)
-target_link_libraries(simulation_interface_c_api 
-  ${CHRONO_LIBRARIES}
-  # vehicle
-  simulation_interface
-)
+# # Vehicle FMU library
+# add_library(vehicle_fmu SHARED
+#   src/vehicle_fmu/VehicleFMU.cpp
+#   src/vehicle_fmu/VehicleFMU.h
+# )
+
+# # Set properties for the vehicle_fmu library
+# set_target_properties(vehicle_fmu PROPERTIES 
+#   FOLDER vehicle_fmu
+#   COMPILE_FLAGS "${CHRONO_CXX_FLAGS}" 
+#   LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+# )
+
+# # Add static linking definition if needed
+# if(NOT BUILD_SHARED_LIBS)
+#   target_compile_definitions(vehicle_fmu PRIVATE CHRONO_STATIC_LINK)
+# endif()
+
+# # Link libraries to vehicle_fmu
+# target_link_libraries(vehicle_fmu PUBLIC
+#   ${CHRONO_LIBRARIES}
+#   vehicle
+#   utils
+#   steering
+# )
+
+# target_include_directories(vehicle_fmu PUBLIC
+#   ${CHRONO_INCLUDE_DIRS}
+#   ${CMAKE_SOURCE_DIR}
+# )
+
+# Create the actual FMU (using the FetchContent system)
+# if(BUILD_FMU)
+#   if(NOT CHRONO_FMI_FOUND)
+#     message(WARNING "Chrono FMI module not found. Cannot build FMU.")
+#     set(BUILD_FMU OFF)
+#   else()
+#     set(FMU_VEHICLE_MODEL_IDENTIFIER "FMU2_WheeledVehicle")
+#     set(USE_CUSTOM_TYPESPLATFORM OFF)
+#     set(FMU_MAIN_DIRECTORY "${CMAKE_BINARY_DIR}/FMUs")
+#     set(FMU_RESOURCES_DIRECTORY "${CMAKE_SOURCE_DIR}/data") 
+#     set(FMU_DEPENDENCIES "")
+#     set(FMU_MSG_PREFIX "   - ")
+#     set(FMU_CS ON)
+  
+#     # Define a new target for the FMU instead of using FetchContent
+#     message(STATUS "Creating FMU target: ${FMU_VEHICLE_MODEL_IDENTIFIER}")
+    
+#     # Create a custom target for the FMU
+#     add_custom_target(${FMU_VEHICLE_MODEL_IDENTIFIER} ALL
+#       DEPENDS vehicle_fmu
+#       COMMENT "Building vehicle FMU")
+    
+#     # Create output directories
+#     file(MAKE_DIRECTORY "${FMU_MAIN_DIRECTORY}")
+    
+#     # Add a custom command to copy the vehicle_fmu library to the FMU directory
+#     add_custom_command(TARGET ${FMU_VEHICLE_MODEL_IDENTIFIER} POST_BUILD
+#       COMMAND ${CMAKE_COMMAND} -E copy_if_different
+#         "$<TARGET_FILE:vehicle_fmu>"
+#         "${FMU_MAIN_DIRECTORY}/$<TARGET_FILE_NAME:vehicle_fmu>"
+#       COMMENT "Copying vehicle_fmu library to FMU directory")
+    
+#     # Store the paths for use in other targets
+#     set(VEHICLE_FMU_MODEL_IDENTIFIER ${FMU_VEHICLE_MODEL_IDENTIFIER})
+#     set(VEHICLE_FMU_DIRECTORY ${FMU_MAIN_DIRECTORY})
+#     set(VEHICLE_FMU_FILENAME "${FMU_MAIN_DIRECTORY}/${FMU_VEHICLE_MODEL_IDENTIFIER}.fmu")
+#     set(VEHICLE_FMU_RUNTIME_OUTPUT_DIRECTORY ${FMU_MAIN_DIRECTORY})
+    
+#     message(STATUS "FMU will be built to: ${VEHICLE_FMU_FILENAME}")
+#   endif()
+# endif()
+
+# add_library(
+#   simulation_interface_c_api MODULE
+#   src/simulation_interface/SimulationInterface_c_api.cpp
+#   src/simulation_interface/SimulationInterface_c_api.h
+# )
+# set_target_properties(simulation_interface_c_api PROPERTIES 
+# 	COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
+# 	COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
+# 	LINK_FLAGS "${CHRONO_LINKER_FLAGS}"
+# )
+# target_include_directories(simulation_interface_c_api PUBLIC
+#   ${CHRONO_INCLUDE_DIRS}
+#   ${CMAKE_SOURCE_DIR}
+# )
+# target_link_libraries(simulation_interface_c_api 
+#   ${CHRONO_LIBRARIES}
+#   # vehicle
+#   simulation_interface
+# )
 
 # Get a list of all .cpp files in the 'src' directory
 file(GLOB SOURCES "src/*.cpp")
@@ -275,6 +449,9 @@ foreach(SOURCE_FILE ${SOURCES})
   target_compile_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_CXX_FLAGS})
   target_link_options(${EXECUTABLE_NAME} PUBLIC ${CHRONO_LINKER_FLAGS})
   target_compile_features(${EXECUTABLE_NAME} PUBLIC "cxx_std_17")
+  if(NOT BUILD_SHARED_LIBS)
+    target_compile_definitions(${EXECUTABLE_NAME} PRIVATE CHRONO_STATIC_LINK)
+  endif()
 
 #--------------------------------------------------------------
 # Link to Chrono libraries and dependency libraries
@@ -286,15 +463,17 @@ foreach(SOURCE_FILE ${SOURCES})
     suspension_test_rig
     utils
     steering
+    # vehicle_fmu
   )
   
   target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     ${CHRONO_LIBRARIES} 
-    vehicle 
     simulation_interface 
-    suspension_test_rig
+    vehicle 
     utils
     steering
+    suspension_test_rig
+    # vehicle_fmu
   )
 
 endforeach()

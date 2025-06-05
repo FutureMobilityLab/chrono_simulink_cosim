@@ -7,8 +7,101 @@
 
 #include <filesystem>
 #include <iostream>
+#include <cmath>
+#include <limits>
 
 namespace simulation_interface {
+
+// Implementation of TerrainInterface
+TerrainInterface::TerrainInterface(chrono::vehicle::WheeledVehicleForce* vehicle) : m_vehicle(vehicle) {
+  // Initialize with default values
+  for (int i = 0; i < 4; i++) {
+    m_height[i] = 0.0;
+    m_normal[i] = chrono::ChVector3d(0, 0, 1); // Default normal points up
+    m_friction[i] = 0.8; // Default friction coefficient
+    // m_query_point[i] = chrono::ChVector3d(0, 0, 0);
+  }
+}
+
+TerrainInterface::~TerrainInterface() {}
+
+double TerrainInterface::GetHeight(const chrono::ChVector3d& loc) const {
+  int idx = FindClosestWheel(loc);
+  // const_cast<TerrainInterface*>(this)->RecordQueryPoint(idx, loc);
+  return m_height[idx];
+  // return (*m_height_fun)(loc);
+}
+
+chrono::ChVector3d TerrainInterface::GetNormal(const chrono::ChVector3d& loc) const {
+  int idx = FindClosestWheel(loc);
+  return m_normal[idx];
+}
+
+float TerrainInterface::GetCoefficientFriction(const chrono::ChVector3d& loc) const {
+  int idx = FindClosestWheel(loc);
+  return static_cast<float>(m_friction[idx]);
+}
+
+void TerrainInterface::SetTerrainHeight(int wheel_idx, double height) {
+  if (wheel_idx >= 0 && wheel_idx < 4) {
+    m_height[wheel_idx] = height;
+  }
+}
+
+void TerrainInterface::SetTerrainNormal(int wheel_idx, double x, double y, double z) {
+  if (wheel_idx >= 0 && wheel_idx < 4) {
+    m_normal[wheel_idx] = chrono::ChVector3d(x, y, z);
+    // Normalize the vector
+    m_normal[wheel_idx].Normalize();
+  }
+}
+
+void TerrainInterface::SetTerrainFriction(int wheel_idx, double mu) {
+  if (wheel_idx >= 0 && wheel_idx < 4) {
+    m_friction[wheel_idx] = mu;
+  }
+}
+
+// void TerrainInterface::RecordQueryPoint(int wheel_idx, const chrono::ChVector3d& point) {
+//   if (wheel_idx >= 0 && wheel_idx < 4) {
+//     m_query_point[wheel_idx] = point;
+//   }
+// }
+
+// chrono::ChVector3d TerrainInterface::GetQueryPoint(int wheel_idx) const {
+//   if (wheel_idx >= 0 && wheel_idx < 4) {
+//     return m_query_point[wheel_idx];
+//   }
+//   return chrono::ChVector3d(0, 0, 0);
+// }
+
+int TerrainInterface::FindClosestWheel(const chrono::ChVector3d& loc) const {
+  std::vector<chrono::ChVector3d> wheel_positions;
+  wheel_positions.push_back(m_vehicle->GetWheel(0, chrono::vehicle::VehicleSide::LEFT)->GetState().pos);
+  wheel_positions.push_back(m_vehicle->GetWheel(0, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos);
+  wheel_positions.push_back(m_vehicle->GetWheel(1, chrono::vehicle::VehicleSide::LEFT)->GetState().pos);
+  wheel_positions.push_back(m_vehicle->GetWheel(1, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos);
+
+  double min_distance = std::numeric_limits<double>::max();
+  int closest_wheel = -1;
+  for (int i = 0; i < 4; i++) {
+    double distance = (loc - wheel_positions[i]).Length();
+    if (distance < min_distance) {
+      min_distance = distance;
+      closest_wheel = i;
+    }
+  }
+  return closest_wheel;
+  
+  // // For debugging/placeholder: just return based on quadrant
+  // if (loc.x() >= 0) {
+  //   if (loc.y() >= 0) return 0; // Front Left
+  //   else return 1;              // Front Right
+  // } else {
+  //   if (loc.y() >= 0) return 2; // Rear Left
+  //   else return 3;              // Rear Right
+  // }
+}
 
 // SimulationInterface::SimulationInterface(const char* config_file) {
 //   std::cout << "Calling simulation_interface: ";
@@ -81,9 +174,8 @@ SimulationInterface::SimulationInterface(
   auto system = car_->GetSystem();
   system->SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
 
-  const std::string rigidterrain_file("terrain/RigidPlane.json");
-  terrain_ = new chrono::vehicle::RigidTerrain(system, chrono::vehicle::GetDataFile(rigidterrain_file));
-  terrain_->Initialize();
+  // Create our custom terrain instead of RigidTerrain
+  terrain_ = std::make_shared<TerrainInterface>(car_);
 
   car_->LogSubsystemTypes();
   std::cout << "\nVehicle mass: " << car_->GetMass() << std::endl;
@@ -102,10 +194,10 @@ SimulationInterface::~SimulationInterface() {
   //   car_ = nullptr;
   // }
 
-  if (terrain_) {
-    delete terrain_;
-    terrain_ = nullptr;
-  }
+  // if (terrain_) {
+  //   delete terrain_;
+  //   terrain_ = nullptr;
+  // }
 
   if (vehicle_model_) {
     delete vehicle_model_;
@@ -114,20 +206,53 @@ SimulationInterface::~SimulationInterface() {
 }
 
 void SimulationInterface::Step(const double input[Input::LENGTH], double output[Output::LENGTH]) {
-    double time = car_->GetSystem()->GetChTime();
+  double time = car_->GetSystem()->GetChTime();
 
   if (vis_) {
     vis_->BeginScene();
 
+    vis_->EnableStats(false);
+    
     // TODO(tvidano): This is the line that causes problems in Julia. It appears
     // that it otherwise works. I have traced the issue to
     // ChVehicleVisualSystemIrrlicht::renderTextBox. However, I cannot tell
     // which line causes the problem. I can try the VSG renderer but that
     // requires adding the VSG dependency.
     vis_->Render();
+    
     vis_->EndScene();
-
   }
+
+  // Process terrain input parameters
+  // Process heights
+  terrain_->SetTerrainHeight(FL, input[Input::TERRAIN_HEIGHT_FL]);
+  terrain_->SetTerrainHeight(FR, input[Input::TERRAIN_HEIGHT_FR]);
+  terrain_->SetTerrainHeight(RL, input[Input::TERRAIN_HEIGHT_RL]);
+  terrain_->SetTerrainHeight(RR, input[Input::TERRAIN_HEIGHT_RR]);
+  
+  // Process normals
+  terrain_->SetTerrainNormal(FL, 
+    input[Input::TERRAIN_NORMAL_X_FL], 
+    input[Input::TERRAIN_NORMAL_Y_FL], 
+    input[Input::TERRAIN_NORMAL_Z_FL]);
+  terrain_->SetTerrainNormal(FR, 
+    input[Input::TERRAIN_NORMAL_X_FR], 
+    input[Input::TERRAIN_NORMAL_Y_FR], 
+    input[Input::TERRAIN_NORMAL_Z_FR]);
+  terrain_->SetTerrainNormal(RL, 
+    input[Input::TERRAIN_NORMAL_X_RL], 
+    input[Input::TERRAIN_NORMAL_Y_RL], 
+    input[Input::TERRAIN_NORMAL_Z_RL]);
+  terrain_->SetTerrainNormal(RR, 
+    input[Input::TERRAIN_NORMAL_X_RR], 
+    input[Input::TERRAIN_NORMAL_Y_RR], 
+    input[Input::TERRAIN_NORMAL_Z_RR]);
+  
+  // Process friction coefficients
+  terrain_->SetTerrainFriction(FL, input[Input::TERRAIN_MU_FL]);
+  terrain_->SetTerrainFriction(FR, input[Input::TERRAIN_MU_FR]);
+  terrain_->SetTerrainFriction(RL, input[Input::TERRAIN_MU_RL]);
+  terrain_->SetTerrainFriction(RR, input[Input::TERRAIN_MU_RR]);
 
   chrono::vehicle::DriverInputs driver_inputs;
   if (driver_) {
@@ -199,10 +324,10 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
 
   // Add tire forces in tire frame
   auto tire_frame = chrono::ChCoordsys<>();
-  const auto force_fl = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_, tire_frame);
-  const auto force_fr = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_, tire_frame);
-  const auto force_rl = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_, tire_frame);
-  const auto force_rr = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_, tire_frame);
+  const auto force_fl = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_fr = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_rl = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_rr = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_.get(), tire_frame);
 
   output[Output::TIRE_FORCE_LONG_FL] = force_fl.force.x();
   output[Output::TIRE_FORCE_LONG_FR] = force_fr.force.x();
@@ -246,6 +371,31 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   const auto wheel_normal_rr = car_->GetWheel(1,chrono::vehicle::VehicleSide::RIGHT)->GetState().rot.GetAxisY();
   const auto normal_rr = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_rr);
   output[Output::WHEEL_STEER_ANG_RR] = std::atan2(normal_rr.x(),normal_rr.y());
+  
+  // Add query points to output
+  auto query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;
+  // auto query_point = terrain_->GetQueryPoint(FL);
+  output[Output::QUERY_POINT_X_FL] = query_point.x();
+  output[Output::QUERY_POINT_Y_FL] = query_point.y();
+  output[Output::QUERY_POINT_Z_FL] = query_point.z();
+  
+  query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos;
+  // query_point = terrain_->GetQueryPoint(FR);
+  output[Output::QUERY_POINT_X_FR] = query_point.x();
+  output[Output::QUERY_POINT_Y_FR] = query_point.y();
+  output[Output::QUERY_POINT_Z_FR] = query_point.z();
+  
+  query_point = car_->GetWheel(1, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;
+  // query_point = terrain_->GetQueryPoint(RL);
+  output[Output::QUERY_POINT_X_RL] = query_point.x();
+  output[Output::QUERY_POINT_Y_RL] = query_point.y();
+  output[Output::QUERY_POINT_Z_RL] = query_point.z();
+  
+  query_point = car_->GetWheel(1, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos;
+  // query_point = terrain_->GetQueryPoint(RR);
+  output[Output::QUERY_POINT_X_RR] = query_point.x();
+  output[Output::QUERY_POINT_Y_RR] = query_point.y();
+  output[Output::QUERY_POINT_Z_RR] = query_point.z();
 }
 
 }

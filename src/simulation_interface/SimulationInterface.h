@@ -65,6 +65,26 @@ enum {
   STEERING,
   THROTTLE,
   BRAKE,
+  TERRAIN_HEIGHT_FL,
+  TERRAIN_HEIGHT_FR,
+  TERRAIN_HEIGHT_RL,
+  TERRAIN_HEIGHT_RR,
+  TERRAIN_NORMAL_X_FL,
+  TERRAIN_NORMAL_Y_FL,
+  TERRAIN_NORMAL_Z_FL,
+  TERRAIN_NORMAL_X_FR,
+  TERRAIN_NORMAL_Y_FR,
+  TERRAIN_NORMAL_Z_FR,
+  TERRAIN_NORMAL_X_RL,
+  TERRAIN_NORMAL_Y_RL,
+  TERRAIN_NORMAL_Z_RL,
+  TERRAIN_NORMAL_X_RR,
+  TERRAIN_NORMAL_Y_RR,
+  TERRAIN_NORMAL_Z_RR,
+  TERRAIN_MU_FL,
+  TERRAIN_MU_FR,
+  TERRAIN_MU_RL,
+  TERRAIN_MU_RR,
   LENGTH
 };
 }
@@ -126,9 +146,61 @@ namespace Output {
         WHEEL_STEER_ANG_FR,
         WHEEL_STEER_ANG_RL,
         WHEEL_STEER_ANG_RR,
+        QUERY_POINT_X_FL,
+        QUERY_POINT_Y_FL,
+        QUERY_POINT_Z_FL,
+        QUERY_POINT_X_FR,
+        QUERY_POINT_Y_FR,
+        QUERY_POINT_Z_FR,
+        QUERY_POINT_X_RL,
+        QUERY_POINT_Y_RL,
+        QUERY_POINT_Z_RL,
+        QUERY_POINT_X_RR,
+        QUERY_POINT_Y_RR,
+        QUERY_POINT_Z_RR,
         LENGTH
     };
 }
+
+// Terrain that expects input values for terrain properties.
+class TerrainInterface : public chrono::vehicle::ChTerrain {
+public:
+  TerrainInterface(chrono::vehicle::WheeledVehicleForce* vehicle);
+  ~TerrainInterface();
+  
+  // Required implementations of ChTerrain virtual methods
+  virtual double GetHeight(const chrono::ChVector3d& loc) const override;
+  virtual chrono::ChVector3d GetNormal(const chrono::ChVector3d& loc) const override;
+  virtual float GetCoefficientFriction(const chrono::ChVector3d& loc) const override;
+  
+  // Methods to update terrain properties from external inputs
+  void SetTerrainHeight(int wheel_idx, double height);
+  void SetTerrainNormal(int wheel_idx, double x, double y, double z);
+  void SetTerrainFriction(int wheel_idx, double mu);
+
+  // Store query point information
+  void RecordQueryPoint(int wheel_idx, const chrono::ChVector3d& point);
+  chrono::ChVector3d GetQueryPoint(int wheel_idx) const;
+  
+  // Synchronize and Advance methods required by ChTerrain
+  virtual void Synchronize(double time) override {}
+  virtual void Advance(double step) override {}
+  
+private:
+  // chrono::ChSystem* m_system;
+  chrono::vehicle::WheeledVehicleForce* m_vehicle;
+  
+  // Terrain properties for each wheel
+  double m_height[4];
+  chrono::ChVector3d m_normal[4];
+  double m_friction[4];
+  
+  // Last query points for each wheel
+  // chrono::ChVector3d m_query_point[4];
+  
+  // Find closest wheel to the specified location
+  int FindClosestWheel(const chrono::ChVector3d& loc) const;
+};
 
 class CH_VEHICLE_API SimulationInterface {
  public:
@@ -158,8 +230,15 @@ class CH_VEHICLE_API SimulationInterface {
   chrono::vehicle::WheeledVehicleForce* car_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> vis_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver_ = nullptr;
-  chrono::vehicle::RigidTerrain* terrain_ = nullptr;
+  std::shared_ptr<TerrainInterface> terrain_ = nullptr;
+  // std::shared_ptr<chrono::vehicle::ChTerrain> terrain_ = nullptr;
   Vehicle_Model* vehicle_model_ = nullptr;
+
+  // Wheel indices for convenient access
+  static constexpr int FL = 0; // Front Left
+  static constexpr int FR = 1; // Front Right
+  static constexpr int RL = 2; // Rear Left
+  static constexpr int RR = 3; // Rear Right
 };
 
 // class SimulationInterface {
