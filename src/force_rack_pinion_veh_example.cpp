@@ -25,7 +25,10 @@
 // Function to calculate terrain height as a function of radius from center
 typedef double (*ground_height_func_t)(const chrono::ChVector3d&);
 
-double CalculateRadialWaveGroundHeight(const double x, const double y) {
+double CalculateRadialWaveGroundHeight(const chrono::ChVector3d& loc) {
+  double x = loc.x();
+  double y = loc.y();
+
   // Center of the terrain pattern
   const double center_x = 0.0;
   const double center_y = 0.0;
@@ -70,7 +73,7 @@ void FillTerrain(
   // to avoid 'jumping' of the normal vector, we take this smoothing approach
   const double delta = 0.05;
   double z0, zfront, zleft;
-  z0 = ground_height_func(loc);
+  z0 = ground_height_func(loc_ISO);
   zfront = ground_height_func(chrono::vehicle::ChWorldFrame::FromISO(loc_ISO + chrono::ChVector3d(delta, 0, 0)));
   zleft = ground_height_func(chrono::vehicle::ChWorldFrame::FromISO(loc_ISO + chrono::ChVector3d(0, delta, 0)));
   chrono::ChVector3d p0(loc_ISO.x(), loc_ISO.y(), z0);
@@ -110,8 +113,8 @@ void FillTerrain(
   // terrain.ny = normal[1] / normal_norm;
   // terrain.nz = normal[2] / normal_norm;
 
-  std::cout << "x:\t" << x << ", y:\t" << y << ", h:\t" << terrain.height
-            <<  ", nx:\t" << terrain.nx << ", ny:\t" << terrain.ny << ", nz:\t" << terrain.nz << "\n";
+  // std::cout << "x:\t" << x << ", y:\t" << y << ", h:\t" << terrain.height
+  //           <<  ", nx:\t" << terrain.nx << ", ny:\t" << terrain.ny << ", nz:\t" << terrain.nz << "\n";
 }
 
 // Function to set terrain friction coefficient
@@ -193,8 +196,8 @@ int main(int argc, char *argv[])
   const double time_step = 0.01; // 10ms
 
   // ground_height_func_t ground_height_func = CalculateFlatGroundHeight;
-  // ground_height_func_t ground_height_func = CalculateRadialWaveGroundHeight;
-  ground_height_func_t ground_height_func = CalculateRampUpGroundHeight;
+  ground_height_func_t ground_height_func = CalculateRadialWaveGroundHeight;
+  // ground_height_func_t ground_height_func = CalculateRampUpGroundHeight;
 
   Terrain fl_terrain;
   Terrain fr_terrain;

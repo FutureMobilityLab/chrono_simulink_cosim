@@ -265,7 +265,7 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
       driver_inputs.m_throttle = 1.0; //input[Input::THROTTLE];
       driver_inputs.m_braking = input[Input::BRAKE];
   }
-  std::cout << "Throttle: " << driver_inputs.m_throttle << "\t";
+  // std::cout << "Throttle: " << driver_inputs.m_throttle << "\t";
 
   car_->Synchronize(time, driver_inputs, *terrain_);
   terrain_->Synchronize(time);
@@ -289,7 +289,7 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   const auto chassis_frame = car_->GetChassisBody()->GetCoordsys();
   const auto pos_dt = car_->GetChassisBody()->GetPosDt();
   output[Output::CHASSIS_VEL_X] = chassis_frame.TransformDirectionParentToLocal(pos_dt).x();
-  std::cout << "velocity x: " << chassis_frame.TransformDirectionParentToLocal(pos_dt).x() << "\n";
+  // std::cout << "velocity x: " << chassis_frame.TransformDirectionParentToLocal(pos_dt).x() << "\n";
   output[Output::CHASSIS_VEL_Y] = chassis_frame.TransformDirectionParentToLocal(pos_dt).y();
   output[Output::CHASSIS_VEL_Z] = chassis_frame.TransformDirectionParentToLocal(pos_dt).z();
 
@@ -357,6 +357,7 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
 
   // Add steering pinion angle
   output[Output::STEERING_PINION_ANGLE] = car_->GetPinionAngle();
+  std::cout << "pinion angle: " << output[Output::STEERING_PINION_ANGLE] << "\t";
 
   // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
   const auto wheel_normal_fl = car_->GetWheel(0,chrono::vehicle::VehicleSide::LEFT)->GetState().rot.GetAxisY();
@@ -371,6 +372,10 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   const auto wheel_normal_rr = car_->GetWheel(1,chrono::vehicle::VehicleSide::RIGHT)->GetState().rot.GetAxisY();
   const auto normal_rr = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_rr);
   output[Output::WHEEL_STEER_ANG_RR] = std::atan2(normal_rr.x(),normal_rr.y());
+  std::cout << "steering angle FL: " << output[Output::WHEEL_STEER_ANG_FL] << "\t";
+  std::cout << "steering angle FR: " << output[Output::WHEEL_STEER_ANG_FR] << "\t";
+  std::cout << "steering angle RL: " << output[Output::WHEEL_STEER_ANG_RL] << "\t";
+  std::cout << "steering angle RR: " << output[Output::WHEEL_STEER_ANG_RR] << "\n";
   
   // Add query points to output
   auto query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;

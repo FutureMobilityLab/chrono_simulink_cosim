@@ -104,7 +104,7 @@ namespace chrono::vehicle
     // linear force on the rack.
     const double pinion_radius = GetPinionRadius();
     const double force = driver_inputs.m_steering * pinion_radius;
-    const double angle = m_motor->GetMotorPos() / pinion_radius;
+    const double angle = GetPinionAngle();
 
     if (auto fun = std::dynamic_pointer_cast<ChFunctionConst>(
             m_motor->GetForceFunction()))
@@ -178,13 +178,12 @@ namespace chrono::vehicle
   }
 
   double ChRackPinionForce::GetPinionAngle() {
-    return GetSteeringLinkCOM() / GetPinionRadius();
+    return m_motor->GetMotorPos() / GetPinionRadius();
   }
 
   // -----------------------------------------------------------------------------
   std::shared_ptr<ChLinkTSDA::ForceFunctor> ChRackPinionForce::GetSpringDamperForceElement() const {
-      auto springDamper = chrono_types::make_shared<LinearSpringDamperForce>(GetSpringCoefficient(), GetDamping());
-      return springDamper;
+    return m_springDamper->GetForceFunctor();
   }
 
   // -----------------------------------------------------------------------------
