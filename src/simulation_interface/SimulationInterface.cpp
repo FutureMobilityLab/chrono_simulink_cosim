@@ -19,7 +19,6 @@ TerrainInterface::TerrainInterface(chrono::vehicle::WheeledVehicleForce* vehicle
     m_height[i] = 0.0;
     m_normal[i] = chrono::ChVector3d(0, 0, 1); // Default normal points up
     m_friction[i] = 0.8; // Default friction coefficient
-    // m_query_point[i] = chrono::ChVector3d(0, 0, 0);
   }
 }
 
@@ -27,9 +26,7 @@ TerrainInterface::~TerrainInterface() {}
 
 double TerrainInterface::GetHeight(const chrono::ChVector3d& loc) const {
   int idx = FindClosestWheel(loc);
-  // const_cast<TerrainInterface*>(this)->RecordQueryPoint(idx, loc);
   return m_height[idx];
-  // return (*m_height_fun)(loc);
 }
 
 chrono::ChVector3d TerrainInterface::GetNormal(const chrono::ChVector3d& loc) const {
@@ -51,7 +48,6 @@ void TerrainInterface::SetTerrainHeight(int wheel_idx, double height) {
 void TerrainInterface::SetTerrainNormal(int wheel_idx, double x, double y, double z) {
   if (wheel_idx >= 0 && wheel_idx < 4) {
     m_normal[wheel_idx] = chrono::ChVector3d(x, y, z);
-    // Normalize the vector
     m_normal[wheel_idx].Normalize();
   }
 }
@@ -61,19 +57,6 @@ void TerrainInterface::SetTerrainFriction(int wheel_idx, double mu) {
     m_friction[wheel_idx] = mu;
   }
 }
-
-// void TerrainInterface::RecordQueryPoint(int wheel_idx, const chrono::ChVector3d& point) {
-//   if (wheel_idx >= 0 && wheel_idx < 4) {
-//     m_query_point[wheel_idx] = point;
-//   }
-// }
-
-// chrono::ChVector3d TerrainInterface::GetQueryPoint(int wheel_idx) const {
-//   if (wheel_idx >= 0 && wheel_idx < 4) {
-//     return m_query_point[wheel_idx];
-//   }
-//   return chrono::ChVector3d(0, 0, 0);
-// }
 
 int TerrainInterface::FindClosestWheel(const chrono::ChVector3d& loc) const {
   std::vector<chrono::ChVector3d> wheel_positions;
@@ -92,37 +75,15 @@ int TerrainInterface::FindClosestWheel(const chrono::ChVector3d& loc) const {
     }
   }
   return closest_wheel;
-  
-  // // For debugging/placeholder: just return based on quadrant
-  // if (loc.x() >= 0) {
-  //   if (loc.y() >= 0) return 0; // Front Left
-  //   else return 1;              // Front Right
-  // } else {
-  //   if (loc.y() >= 0) return 2; // Rear Left
-  //   else return 3;              // Rear Right
-  // }
 }
-
-// SimulationInterface::SimulationInterface(const char* config_file) {
-//   std::cout << "Calling simulation_interface: ";
-//   std::cout << config_file << "\n";
-//   this->config_file = config_file;
-// }
-
-// void SimulationInterface::step(const double input[Input::LENGTH], double output[Output::LENGTH]) {
-//   std::cout << "Calling SimulationInterface::step: ";
-//   for (size_t i=0; i <= 2; i++) {
-//     std::cout << "[" << i << "] = " << input[i] << "\n";
-//   }
-//   output[Output::SUM] = input[Input::THROTTLE] + input[Input::THROTTLE] + input[Input::BRAKE];
-//   output[Output::DIFF] = input[Input::THROTTLE] + input[Input::THROTTLE] + input[Input::BRAKE];
-// }
 
 SimulationInterface::SimulationInterface(
   const char* vehicle_model_name
 ) {
   if (std::strcmp(vehicle_model_name, "sedan") == 0) {
     vehicle_model_ = new simulation_interface::Sedan_Model();
+  } else if (std::strcmp(vehicle_model_name, "hmmwv") == 0) {
+    vehicle_model_ = new simulation_interface::HMMWV_Model();
   } else {
     std::cerr << "Vehicle model name: " << vehicle_model_name 
               << " not supported. Check for typos.";
@@ -132,8 +93,6 @@ SimulationInterface::SimulationInterface(
   chrono::vehicle::SetDataPath("C:\\Users\\15309\\Project_Chrono\\chrono_simulink_cosim\\data\\vehicle\\");
   const std::string data_file = chrono::vehicle::GetDataFile(
       vehicle_model_->VehicleJSON());
-  // const std::string data_file = "C:\\Users\\15309\\Project_Chrono\\chrono_simulink_cosim\\data\\vehicle/" + 
-  //   vehicle_model_->VehicleJSON();
   std::cout << "data_file: " << data_file << "\n";
   car_ = new chrono::vehicle::WheeledVehicleForce(
     data_file,
@@ -259,13 +218,12 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
       driver_inputs = driver_->GetInputs();
       driver_->Synchronize(time);
       driver_->Advance(step_size_);
-      driver_inputs.m_steering *= 2.0;
+      driver_inputs.m_steering *= 4.0;
     } else {
       driver_inputs.m_steering = input[Input::STEERING];
-      driver_inputs.m_throttle = 1.0; //input[Input::THROTTLE];
+      driver_inputs.m_throttle = input[Input::THROTTLE];
       driver_inputs.m_braking = input[Input::BRAKE];
   }
-  // std::cout << "Throttle: " << driver_inputs.m_throttle << "\t";
 
   car_->Synchronize(time, driver_inputs, *terrain_);
   terrain_->Synchronize(time);
@@ -289,7 +247,6 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   const auto chassis_frame = car_->GetChassisBody()->GetCoordsys();
   const auto pos_dt = car_->GetChassisBody()->GetPosDt();
   output[Output::CHASSIS_VEL_X] = chassis_frame.TransformDirectionParentToLocal(pos_dt).x();
-  // std::cout << "velocity x: " << chassis_frame.TransformDirectionParentToLocal(pos_dt).x() << "\n";
   output[Output::CHASSIS_VEL_Y] = chassis_frame.TransformDirectionParentToLocal(pos_dt).y();
   output[Output::CHASSIS_VEL_Z] = chassis_frame.TransformDirectionParentToLocal(pos_dt).z();
 
@@ -357,7 +314,6 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
 
   // Add steering pinion angle
   output[Output::STEERING_PINION_ANGLE] = car_->GetPinionAngle();
-  std::cout << "pinion angle: " << output[Output::STEERING_PINION_ANGLE] << "\t";
 
   // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
   const auto wheel_normal_fl = car_->GetWheel(0,chrono::vehicle::VehicleSide::LEFT)->GetState().rot.GetAxisY();
@@ -372,32 +328,24 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   const auto wheel_normal_rr = car_->GetWheel(1,chrono::vehicle::VehicleSide::RIGHT)->GetState().rot.GetAxisY();
   const auto normal_rr = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_rr);
   output[Output::WHEEL_STEER_ANG_RR] = std::atan2(normal_rr.x(),normal_rr.y());
-  std::cout << "steering angle FL: " << output[Output::WHEEL_STEER_ANG_FL] << "\t";
-  std::cout << "steering angle FR: " << output[Output::WHEEL_STEER_ANG_FR] << "\t";
-  std::cout << "steering angle RL: " << output[Output::WHEEL_STEER_ANG_RL] << "\t";
-  std::cout << "steering angle RR: " << output[Output::WHEEL_STEER_ANG_RR] << "\n";
-  
+
   // Add query points to output
   auto query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;
-  // auto query_point = terrain_->GetQueryPoint(FL);
   output[Output::QUERY_POINT_X_FL] = query_point.x();
   output[Output::QUERY_POINT_Y_FL] = query_point.y();
   output[Output::QUERY_POINT_Z_FL] = query_point.z();
   
   query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos;
-  // query_point = terrain_->GetQueryPoint(FR);
   output[Output::QUERY_POINT_X_FR] = query_point.x();
   output[Output::QUERY_POINT_Y_FR] = query_point.y();
   output[Output::QUERY_POINT_Z_FR] = query_point.z();
   
   query_point = car_->GetWheel(1, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;
-  // query_point = terrain_->GetQueryPoint(RL);
   output[Output::QUERY_POINT_X_RL] = query_point.x();
   output[Output::QUERY_POINT_Y_RL] = query_point.y();
   output[Output::QUERY_POINT_Z_RL] = query_point.z();
   
   query_point = car_->GetWheel(1, chrono::vehicle::VehicleSide::RIGHT)->GetState().pos;
-  // query_point = terrain_->GetQueryPoint(RR);
   output[Output::QUERY_POINT_X_RR] = query_point.x();
   output[Output::QUERY_POINT_Y_RR] = query_point.y();
   output[Output::QUERY_POINT_Z_RR] = query_point.z();

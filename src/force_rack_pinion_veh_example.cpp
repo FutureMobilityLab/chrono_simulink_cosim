@@ -95,32 +95,22 @@ void FillTerrain(
   terrain.nx = normal.x();
   terrain.ny = normal.y();
   terrain.nz = normal.z();
-
-  // terrain.height = ground_height_func(x, y);
-  // const double h_dx = ground_height_func(x + delta, y);
-  // const double h_dy = ground_height_func(x, y + delta);
-
-  // const Eigen::Vector3d P1 = {x, y, terrain.height};
-  // const Eigen::Vector3d P2 = {x + delta, y, h_dx};
-  // const Eigen::Vector3d P3 = {x, y + delta, h_dy};
-
-  // const Eigen::Vector3d v1 = P2 - P1;
-  // const Eigen::Vector3d v2 = P3 - P1;
-
-  // const Eigen::Vector3d normal = v1.cross(v2);
-  // const double normal_norm = normal.norm();
-  // terrain.nx = normal[0] / normal_norm;
-  // terrain.ny = normal[1] / normal_norm;
-  // terrain.nz = normal[2] / normal_norm;
-
-  // std::cout << "x:\t" << x << ", y:\t" << y << ", h:\t" << terrain.height
-  //           <<  ", nx:\t" << terrain.nx << ", ny:\t" << terrain.ny << ", nz:\t" << terrain.nz << "\n";
 }
 
 // Function to set terrain friction coefficient
 double GetTerrainFriction() {
   // Constant friction value for all terrain
   return 0.8;
+}
+
+double SineSteer(const double time) {
+  const double wavelength = 10.0;
+  const double start_time = 5.0;
+  if (time < start_time) {
+    return 0.0;
+  } else {
+    return 500.0 * std::sin(2 * chrono::CH_PI * (time - start_time) / wavelength);
+  }
 }
 
 // Function to initialize the input array with default terrain parameters
@@ -165,6 +155,7 @@ void InitializeInputArray(double input[simulation_interface::Input::LENGTH]) {
 int main(int argc, char *argv[])
 {
   auto simulation_interface = simulation_interface::SimulationInterface("sedan");
+  // auto simulation_interface = simulation_interface::SimulationInterface("hmmwv");
 
   auto vis = chrono_types::make_shared<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht>();
   vis->SetWindowTitle("Rack and pinion demo");
@@ -177,13 +168,13 @@ int main(int argc, char *argv[])
 
   simulation_interface.SetVis(vis);
   
-  auto driver = chrono_types::make_shared<chrono::vehicle::ChInteractiveDriverIRR>(*vis);
-  driver->SetSteeringDelta(0.02);
-  // driver->SetGains(10.0);
-  driver->SetThrottleDelta(0.02);
-  driver->SetBrakingDelta(0.06);
-  driver->Initialize();
-  simulation_interface.SetDriver(driver);
+  // auto driver = chrono_types::make_shared<chrono::vehicle::ChInteractiveDriverIRR>(*vis);
+  // driver->SetSteeringDelta(0.2);
+  // // driver->SetGains(10.0);
+  // driver->SetThrottleDelta(0.02);
+  // driver->SetBrakingDelta(0.06);
+  // driver->Initialize();
+  // simulation_interface.SetDriver(driver);
 
   // Initialize input array with default values
   double input[simulation_interface::Input::LENGTH];
@@ -193,7 +184,7 @@ int main(int argc, char *argv[])
   
   // Simulation time and time step
   double time = 0.0;
-  const double time_step = 0.01; // 10ms
+  const double time_step = simulation_interface.GetStepSize();
 
   // ground_height_func_t ground_height_func = CalculateFlatGroundHeight;
   ground_height_func_t ground_height_func = CalculateRadialWaveGroundHeight;
@@ -205,14 +196,14 @@ int main(int argc, char *argv[])
   Terrain rr_terrain;
   
   int frame_count = 0;
+
+  // First step to get wheel positions from output
+  simulation_interface.Step(input, output);
   
   while (vis->Run()) {
     // Update time
     time += time_step;
-    
-    // First step to get wheel positions from output
-    simulation_interface.Step(input, output);
-    
+
     // Extract wheel positions from the output array
     double fl_x = output[simulation_interface::Output::QUERY_POINT_X_FL];
     double fl_y = output[simulation_interface::Output::QUERY_POINT_Y_FL];
@@ -259,8 +250,29 @@ int main(int argc, char *argv[])
     input[simulation_interface::Input::TERRAIN_MU_FR] = friction;
     input[simulation_interface::Input::TERRAIN_MU_RL] = friction;
     input[simulation_interface::Input::TERRAIN_MU_RR] = friction;
+
+    // Set actuator commands.
+    input[simulation_interface::Input::STEERING] = SineSteer(time);
+    if (time > 5 && time < 10) {
+      input[simulation_interface::Input::THROTTLE] = 0.0;
+      input[simulation_interface::Input::BRAKE] = 0.0;
+    } else if (time >= 10 && time < 20) {
+      input[simulation_interface::Input::THROTTLE] = 1.0;
+      input[simulation_interface::Input::BRAKE] = 0.0;
+    } else if (time >= 20) {
+      input[simulation_interface::Input::THROTTLE] = 0.0;
+      input[simulation_interface::Input::BRAKE] = 1.0;
+    }
     
     // Execute simulation step with updated terrain parameters
+    std::cout << "T: " << time
+              << "\tStr: " << input[simulation_interface::Input::STEERING]
+              << "\tThr: " << input[simulation_interface::Input::THROTTLE]
+              << "\tBrk: " << input[simulation_interface::Input::BRAKE]
+              << "\tVel: " << output[simulation_interface::Output::CHASSIS_VEL_X]
+              << "\tPin: " << output[simulation_interface::Output::STEERING_PINION_ANGLE] * chrono::CH_RAD_TO_DEG
+              << "\tFL[deg]: " << output[simulation_interface::Output::WHEEL_STEER_ANG_FL] * chrono::CH_RAD_TO_DEG
+              << "\n";
     simulation_interface.Step(input, output);
   }
   

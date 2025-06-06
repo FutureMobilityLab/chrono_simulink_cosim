@@ -44,17 +44,44 @@ class Sedan_Model : public Vehicle_Model {
     virtual std::string ModelName() const override { return "Sedan"; }
     virtual std::string VehicleJSON() const override { return "sedan_force/vehicle/Sedan_Vehicle.json"; }
     virtual std::string TireJSON(unsigned int axle) const override {
-        ////return "sedan_force/tire/Sedan_RigidTire.json";
+        //return "sedan_force/tire/Sedan_RigidTire.json";
         return "sedan_force/tire/Sedan_TMeasyTire.json";
         // return "sedan_force/tire/Sedan_Pac02Tire.json";
     }
     virtual std::string EngineJSON() const override {
-        ////return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";
+        //return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";
         return "sedan_force/powertrain/Sedan_EngineShafts.json";
     }
     virtual std::string TransmissionJSON() const override {
-        ////return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
+        //return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
         return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
+    }
+    virtual double CameraDistance() const override { return 6.0; }
+    virtual chrono::ChContactMethod ContactMethod() const override { return chrono::ChContactMethod::SMC; }
+};
+
+
+// This class doesn't support the rack and pinion force type.
+class HMMWV_Model : public Vehicle_Model {
+  public:
+    virtual std::string ModelName() const override { return "HMMWV"; }
+    virtual std::string VehicleJSON() const override { return "hmmwv/vehicle/HMMWV_Vehicle_Force.json"; }
+    virtual std::string TireJSON(unsigned int axle) const override {
+        //return "hmmwv/tire/HMMWV_RigidTire.json";
+        //return "hmmwv/tire/HMMWV_FialaTire.json";
+        return "hmmwv/tire/HMMWV_TMeasyTire.json";
+        //return "hmmwv/tire/HMMWV_TMsimpleTire.json";
+        //return "hmmwv/tire/HMMWV_Pac89Tire.json";
+        // return "hmmwv/tire/HMMWV_Pac02Tire.json";
+    }
+    virtual std::string EngineJSON() const override {
+        return "hmmwv/powertrain/HMMWV_EngineShafts.json";
+        //return "hmmwv/powertrain/HMMWV_EngineSimpleMap.json";
+        //return "hmmwv/powertrain/HMMWV_EngineSimple.json";
+    }
+    virtual std::string TransmissionJSON() const override {
+        return "hmmwv/powertrain/HMMWV_AutomaticTransmissionShafts.json";
+        //return "hmmwv/powertrain/HMMWV_AutomaticTransmissionSimpleMap.json";
     }
     virtual double CameraDistance() const override { return 6.0; }
     virtual chrono::ChContactMethod ContactMethod() const override { return chrono::ChContactMethod::SMC; }
@@ -187,16 +214,12 @@ public:
   virtual void Advance(double step) override {}
   
 private:
-  // chrono::ChSystem* m_system;
   chrono::vehicle::WheeledVehicleForce* m_vehicle;
   
   // Terrain properties for each wheel
   double m_height[4];
   chrono::ChVector3d m_normal[4];
   double m_friction[4];
-  
-  // Last query points for each wheel
-  // chrono::ChVector3d m_query_point[4];
   
   // Find closest wheel to the specified location
   int FindClosestWheel(const chrono::ChVector3d& loc) const;
@@ -225,6 +248,10 @@ class CH_VEHICLE_API SimulationInterface {
     driver_ = driver;
   }
 
+  double GetStepSize() {
+    return step_size_;
+  }
+
  private:
   const double step_size_ = 2e-3;
   chrono::vehicle::WheeledVehicleForce* car_ = nullptr;
@@ -240,16 +267,6 @@ class CH_VEHICLE_API SimulationInterface {
   static constexpr int RL = 2; // Rear Left
   static constexpr int RR = 3; // Rear Right
 };
-
-// class SimulationInterface {
-//  public:
-//   SimulationInterface(const char* config_file);
-
-//   void step(const double input[Input::LENGTH], double out[Output::LENGTH]);
-
-//  private:
-//   std::string config_file;
-// };
 
 } // namespace simulation_interface
 

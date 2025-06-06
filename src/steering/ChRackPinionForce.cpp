@@ -29,10 +29,10 @@ namespace chrono::vehicle
 
   ChRackPinionForce::~ChRackPinionForce()
   {
-    auto sys = m_prismatic->GetSystem();
+    auto sys = m_motor->GetSystem();
     if (sys)
     {
-      sys->Remove(m_prismatic);
+      // sys->Remove(m_prismatic);
       sys->Remove(m_motor);
     }
   }
@@ -105,21 +105,16 @@ namespace chrono::vehicle
     const double pinion_radius = GetPinionRadius();
     const double force = driver_inputs.m_steering * pinion_radius;
     const double angle = GetPinionAngle();
+    const ChVector3d reactive_force = m_motor->GetMotorForce();
+    const double bumper_spring_constant = 100000.0;
 
     if (auto fun = std::dynamic_pointer_cast<ChFunctionConst>(
-            m_motor->GetForceFunction()))
-    {
+            m_motor->GetForceFunction())) {
+      const auto max_angle = GetMaxAngle();
       // Enforce maximum displacement.
-      if (angle > GetMaxAngle())
-      {
-        fun->SetConstant(-force);
-      }
-      else if (angle < -GetMaxAngle())
-      {
-        fun->SetConstant(-force);
-      }
-      else
-      {
+      if (std::abs(angle) > max_angle) {
+        fun->SetConstant(-bumper_spring_constant * (angle - max_angle));
+      } else {
         fun->SetConstant(force);
       }
     }
@@ -158,16 +153,6 @@ namespace chrono::vehicle
   // -----------------------------------------------------------------------------
   void ChRackPinionForce::LogConstraintViolations()
   {
-    // Translational joint
-    {
-      ChVectorDynamic<> C = m_prismatic->GetConstraintViolation();
-      std::cout << "Prismatic           ";
-      std::cout << "  " << C(0) << "  ";
-      std::cout << "  " << C(1) << "  ";
-      std::cout << "  " << C(2) << "  ";
-      std::cout << "  " << C(3) << "  ";
-      std::cout << "  " << C(4) << "\n";
-    }
 
     // Actuator
     {
@@ -196,7 +181,7 @@ namespace chrono::vehicle
     ChPart::ExportBodyList(jsonDocument, bodies);
 
     std::vector<std::shared_ptr<ChLink>> joints;
-    joints.push_back(m_prismatic);
+    // joints.push_back(m_prismatic);
     joints.push_back(m_motor);
     ChPart::ExportJointList(jsonDocument, joints);
   }
@@ -211,7 +196,7 @@ namespace chrono::vehicle
     database.WriteBodies(bodies);
 
     std::vector<std::shared_ptr<ChLink>> joints;
-    joints.push_back(m_prismatic);
+    // joints.push_back(m_prismatic);
     joints.push_back(m_motor);
     database.WriteJoints(joints);
   }

@@ -105,7 +105,7 @@ namespace chrono::vehicle
 
     virtual void Output(ChVehicleOutput &database) const override;
 
-    std::shared_ptr<ChLinkLockPrismatic> m_prismatic; ///< handle to the prismatic joint chassis-link
+    // std::shared_ptr<ChLinkLockPrismatic> m_prismatic; ///< handle to the prismatic joint chassis-link
     std::shared_ptr<ChLinkMotorLinearForce> m_motor;  ///< handle to the linear actuator on steering link
     std::shared_ptr<ChLinkTSDA> m_springDamper;       ///< handle to the spring-damper on rack
   };
