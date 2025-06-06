@@ -1,7 +1,7 @@
 {
   "Name": "HMMWV TMeasy Tire",
   "Type": "Tire",
-  "Template": "TMeasyTire",
+  "Template": "TMsimpleTire",
 
   // ------------------------------------------------
   // Tire design (REQUIRED)

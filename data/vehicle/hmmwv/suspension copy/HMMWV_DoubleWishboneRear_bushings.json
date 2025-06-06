@@ -1,40 +1,40 @@
 {
-    "Name": "HMMWV DoubleWishbone Front",
+    "Name": "HMMWV DoubleWishbone Rear",
     "Type": "Suspension",
     "Template": "DoubleWishbone",
 
     "Vehicle-Frame Inertia": false,
 
-    "Camber Angle (deg)": 0,
-    "Toe Angle (deg)": 0,
+   "Camber Angle (deg)": 0,
+   "Toe Angle (deg)": 0,
 
     "Spindle": {
-        "Mass": 14.705,
-        "COM": [ -0.040, 0.910, -0.026 ],
-        "Inertia": [ 0.04117, 0.07352, 0.04117 ],
+        "Mass": 15.91,
+        "COM": [ 0.036, 0.910, -0.026 ],
+        "Inertia": [ 2, 4, 2 ],
         "Radius": 0.15,
         "Width": 0.06
     },
 
     "Upright": {
-        "Mass": 19.450,
-        "COM": [ -0.040, 0.751, -0.026 ],
-        "Moments of Inertia": [ 0.1656, 0.1934, 0.04367 ],
+        "Mass": 27.27,
+        "COM": [ 0.036, 0.751, -0.026 ],
+        "Moments of Inertia": [ 5, 5, 5 ],
         "Products of Inertia": [ 0, 0, 0 ],
-        "Radius": 0.04
+        "Radius": 0.025
     },
 
     // If bushing data is defined, use bushings for connectino to chassis.
     // Otherwise, use revolute joints.
     "Upper Control Arm": {
-        "Mass": 5.813,
-        "COM": [ -0.106, 0.589, 0.218 ],
-        "Moments of Inertia": [ 0.03, 0.03, 0.06276 ],
+        "Mass": 5.45,
+        "COM": [ 0.124, 0.589, 0.221 ],
+        "Moments of Inertia": [ 2, 2, 2 ],
         "Products of Inertia": [ 0, 0, 0 ],
         "Radius": 0.02,
-        "Location Upright": [ -0.053, 0.716, 0.215 ],
-        "Location Chassis Front": [ -0.048, 0.446, 0.245 ],
-        "Location Chassis Back": [ -0.268, 0.478, 0.196 ],
+        "Location Upright": [ 0.036, 0.716, 0.216 ],
+        "Location Chassis Front": [ 0.349, 0.462, 0.228 ],
+        "Location Chassis Back": [ 0.077, 0.462, 0.224 ],
         "Bushing Data": {
             "Stiffness Linear": 7e7,
             "Damping Linear": 0.35e5,
@@ -52,12 +52,12 @@
     // If bushing data is defined, use bushings for connectino to chassis.
     // Otherwise, use revolute joints.
     "Lower Control Arm": {
-        "Mass": 23.965,
+        "Mass": 16.36,
         "COM": [ 0.000, 0.547, -0.059 ],
-        "Moments of Inertia": [ 0.4, 0.4, 0.8938 ],
+        "Moments of Inertia": [ 3, 3, 3 ],
         "Products of Inertia": [ 0, 0, 0 ],
         "Radius": 0.03,
-        "Location Upright": [ -0.036, 0.787, -0.118 ],
+        "Location Upright": [ 0.036, 0.787, -0.118 ],
         "Location Chassis Front": [ 0.223, 0.307, 0.000 ],
         "Location Chassis Back": [ -0.223, 0.307, 0.000 ],
         "Bushing Data": {
@@ -80,45 +80,45 @@
         "Mass": 6,
         "Radius": 0.02,
         "Inertia": [ 0.05, 0.05, 0.5 ],
-        "Location Chassis": [ -0.250, 0.448, 0.054 ],
-        "Location Upright": [ -0.176, 0.821, -0.016 ]
+        "Location Chassis": [ 0.223, 0.416, 0.059 ],
+        "Location Upright": [ 0.170, 0.821, -0.009 ]
     },
 
     "Spring": {
-        "Location Chassis": [ 0.104, 0.510, 0.197 ],
-        "Location Arm": [ 0.097, 0.543, -0.047 ],
+        "Location Chassis": [ -0.104, 0.502, 0.256 ],
+        "Location Arm": [ -0.097, 0.543, -0.047 ],
         "Minimum Length": 0.15,
-        "Maximum Length": 0.3,
-        "Spring Curve Data": [
-            [ -0.2, -322095.536 ],
-            [ -0.18, -240521.166 ],
-            [ -0.16, -174535.686 ],
-            [ -0.14, -122406.996 ],
-            [ -0.12, -82402.997 ],
-            [ -0.1, -52791.592 ],
-            [ -0.08, -31840.681 ],
-            [ -0.06, -17818.165 ],
-            [ -0.04, -8991.945 ],
-            [ -0.02, -3629.923 ],
+        "Maximum Length": 0.35,
+        "Curve Data": [
+            [ -0.2, -711719.272 ],
+            [ -0.18, -531468.245 ],
+            [ -0.16, -385663.250 ],
+            [ -0.14, -270476.949 ],
+            [ -0.12, -182082.006 ],
+            [ -0.1, -116651.084 ],
+            [ -0.08, -70356.846 ],
+            [ -0.06, -39371.956 ],
+            [ -0.04, -19869.076 ],
+            [ -0.02, -8020.869 ],
             [ 0, 0 ],
-            [ 0.02, 3629.923 ],
-            [ 0.04, 8991.945 ],
-            [ 0.06, 17818.165 ],
-            [ 0.08, 31840.681 ],
-            [ 0.1, 52791.592 ],
-            [ 0.12, 82402.997 ],
-            [ 0.14, 122406.996 ],
-            [ 0.16, 174535.686 ],
-            [ 0.18, 240521.166 ],
-            [ 0.2, 322095.536 ]
+            [ 0.02, 8020.869 ],
+            [ 0.04, 19869.076 ],
+            [ 0.06, 39371.956 ],
+            [ 0.08, 70356.846 ],
+            [ 0.1, 116651.084 ],
+            [ 0.12, 182082.006 ],
+            [ 0.14, 270476.949 ],
+            [ 0.16, 385663.250 ],
+            [ 0.18, 531468.245 ],
+            [ 0.2, 711719.272 ]
         ],
-        "Free Length": 0.339
+        "Free Length": 0.382
     },
 
     "Shock": {
-        "Location Chassis": [ 0.104, 0.498, 0.323 ],
-        "Location Arm": [ 0.097, 0.543, -0.047 ],
-        "Damping Coefficient": 19015.5692
+        "Location Chassis": [ -0.104, 0.498, 0.323 ],
+        "Location Arm": [ -0.097, 0.544, -0.038 ],
+        "Damping Coefficient": 36725.2201
     },
 
     "Axle": {

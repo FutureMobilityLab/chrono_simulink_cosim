@@ -23,10 +23,10 @@
     "Orientation":  [1, 0, 0, 0]
   },
   
-  "Rear Connector Location": [ -2.5, 0, -0.25 ],
+  "Rear Connector Location": [ -2.5, 0, -0.25 ]//,
 
-  "Visualization":
-  {
-    "Mesh":  "hmmwv/hmmwv_chassis.obj"
-  }
+  // "Visualization":
+  // {
+  //   "Mesh":  "hmmwv/hmmwv_chassis.obj"
+  // }
 }
