@@ -1,19 +1,133 @@
-#include "src/simulation_interface/SimulationInterface_c_api.h"
+#include "src/simulation_interface/SimulationInterface_c_api.h" // Includes SimApiErrorCode enum
+#include <iostream> // For std::cerr
+#include <cstring>  // For std::strlen
+#include <stdexcept> // For std::invalid_argument, std::exception
 
 extern "C" {
-  simulation_interface::SimulationInterface* CreateSimulationInterface(const char* config_file) {
-    return new simulation_interface::SimulationInterface(config_file);
+
+// Create a new Simulation_Interface object
+// Returns an error code, and passes the created object pointer via an output parameter.
+CH_VEHICLE_API int CreateSimulationInterface(const char* config_file, simulation_interface::SimulationInterface** obj_out) {
+  if (obj_out == nullptr) {
+    std::cerr << "C API Error (CreateSimulationInterface): Output pointer 'obj_out' is null." << std::endl;
+    return SIM_API_ERROR_NULL_POINTER;
+  }
+  *obj_out = nullptr; // Initialize output pointer to null to avoid dangling pointers on error
+
+  if (config_file == nullptr || std::strlen(config_file) == 0) {
+    std::cerr << "C API Error (CreateSimulationInterface): Configuration file path is null or empty." << std::endl;
+    return SIM_API_ERROR_INVALID_ARGUMENT;
   }
 
-  void DestroySimulationInterface(simulation_interface::SimulationInterface* obj) {
+  try {
+    *obj_out = new simulation_interface::SimulationInterface(config_file);
+    return SIM_API_OK;
+  } catch (const std::invalid_argument& e) {
+    std::cerr << "C API Error (CreateSimulationInterface): Invalid argument during creation: " << e.what() << std::endl;
+    return SIM_API_ERROR_INVALID_ARGUMENT;
+  } catch (const std::exception& e) {
+    std::cerr << "C API Error (CreateSimulationInterface): General C++ exception during creation: " << e.what() << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  } catch (...) {
+    std::cerr << "C API Error (CreateSimulationInterface): Unknown C++ exception during creation." << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  }
+}
+
+// Get the fixed step size
+// Returns an error code, and passes the step size via an output parameter.
+// Assuming SimulationInterface has a static method or global constant GetDefaultStepSize()
+CH_VEHICLE_API int GetStepSize(simulation_interface::SimulationInterface* obj, double* step_size_out) {
+  if (obj == nullptr) {
+    std::cerr << "C API Error (Step): Received null SimulationInterface object." << std::endl;
+    return SIM_API_ERROR_NULL_POINTER; // Return specific error code
+  }
+  if (step_size_out == nullptr) {
+    std::cerr << "C API Error (GetStepSize): Output pointer 'step_size_out' is null." << std::endl;
+    return SIM_API_ERROR_NULL_POINTER;
+  }
+  try {
+    *step_size_out = obj->GetStepSize();
+    return SIM_API_OK;
+  } catch (const std::exception& e) {
+    std::cerr << "C API Error (GetStepSize): C++ exception caught: " << e.what() << std::endl;
+    *step_size_out = -1.0; // Set an invalid default
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  } catch (...) {
+    std::cerr << "C API Error (GetStepSize): Unknown C++ exception caught." << std::endl;
+    *step_size_out = -1.0;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  }
+}
+
+// Delete a Simulation_Interface object
+// Returns an error code for robustness, though `delete nullptr` is safe.
+CH_VEHICLE_API int DestroySimulationInterface(simulation_interface::SimulationInterface* obj) {
+  if (obj == nullptr) {
+    // Deleting nullptr is safe, so this might just be for logging/consistency
+    std::cerr << "C API Warning (DestroySimulationInterface): Received null object to destroy. Doing nothing." << std::endl;
+    return SIM_API_OK; // Or SIM_API_ERROR_NULL_POINTER if strict
+  }
+  try {
     delete obj;
+    return SIM_API_OK;
+  } catch (const std::exception& e) {
+    std::cerr << "C API Error (DestroySimulationInterface): C++ exception during deletion: " << e.what() << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  } catch (...) {
+    std::cerr << "C API Error (DestroySimulationInterface): Unknown C++ exception during deletion." << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
   }
+}
 
-  void Step(
+// Call the step method
+CH_VEHICLE_API int Step( // Changed return type to int
     simulation_interface::SimulationInterface* obj, 
     const double input[simulation_interface::Input::LENGTH], 
     double output[simulation_interface::Output::LENGTH]
-  ) {
-    obj->Step(input, output);
+) {
+  if (obj == nullptr) {
+    std::cerr << "C API Error (Step): Received null SimulationInterface object." << std::endl;
+    return SIM_API_ERROR_NULL_POINTER; // Return specific error code
   }
-} 
+  // You might also add checks for input/output arrays being nullptr if they can be
+  if (input == nullptr || output == nullptr) {
+    std::cerr << "C API Error (Step): Input or output array is null." << std::endl;
+    return SIM_API_ERROR_NULL_POINTER;
+  }
+
+  try {
+    obj->Step(input, output); // Call the actual C++ method
+    return SIM_API_OK; // Return success code
+  } catch (const std::exception& e) {
+    std::cerr << "C API Error (Step): C++ exception caught during step: " << e.what() << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE; // Translate C++ exception to a C error code
+  } catch (...) {
+    std::cerr << "C API Error (Step): Unknown C++ exception caught during step." << std::endl;
+    return SIM_API_ERROR_INTERNAL_FAILURE;
+  }
+}
+
+// Get current simulation time
+CH_VEHICLE_API int GetSimulationTime(simulation_interface::SimulationInterface* obj, double* time_out) {
+    if (obj == nullptr || time_out == nullptr) {
+        std::cerr << "C API Error (GetSimulationTime): Null pointer detected." << std::endl;
+        if (time_out) *time_out = -1.0; // Indicate error with a default value
+        return SIM_API_ERROR_NULL_POINTER;
+    }
+    try {
+        *time_out = obj->GetSimTime(); // Assuming obj->GetSystemPtr() is valid
+        return SIM_API_OK;
+    } catch (const std::exception& e) {
+        std::cerr << "C API Error (GetSimulationTime): C++ exception caught: " << e.what() << std::endl;
+        *time_out = -1.0;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    } catch (...) {
+        std::cerr << "C API Error (GetSimulationTime): Unknown C++ exception caught." << std::endl;
+        *time_out = -1.0;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    }
+}
+
+
+} // extern "C"

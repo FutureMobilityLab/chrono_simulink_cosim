@@ -2,15 +2,15 @@
 #define SIMULATIONINTERFACE_H
 
 // Remove custom export macros
-// #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__)  || defined( __MWERKS__)
-//     #if defined( SIM_INTERFACE_EXPORTS )
-//         #define SIM_INTERFACE_API __declspec(dllexport)
-//     #else
-//         #define SIM_INTERFACE_API __declspec(dllimport)
-//     #endif
-// #else
-//     #define SIM_INTERFACE_API
-// #endif
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__)  || defined( __MWERKS__)
+  #if defined( SIM_INTERFACE_EXPORTS )
+    #define SIM_INTERFACE_API __declspec(dllexport)
+  #else
+    #define SIM_INTERFACE_API __declspec(dllimport)
+  #endif
+#else
+  #define SIM_INTERFACE_API
+#endif
 
 #include "chrono/physics/ChContactMaterial.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
@@ -21,6 +21,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
+
 #include "src/vehicle/WheeledVehicleForce.h"
 
 #include <string>
@@ -185,6 +186,7 @@ namespace Output {
         QUERY_POINT_X_RR,
         QUERY_POINT_Y_RR,
         QUERY_POINT_Z_RR,
+        SIM_TIME,
         LENGTH
     };
 }
@@ -247,6 +249,8 @@ class CH_VEHICLE_API SimulationInterface {
   void SimulationInterface::SetDriver(std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver) {
     driver_ = driver;
   }
+
+  double SimulationInterface::GetSimTime();
 
   double GetStepSize() {
     return step_size_;

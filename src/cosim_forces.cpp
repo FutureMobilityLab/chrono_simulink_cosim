@@ -104,13 +104,13 @@ int main(int argc, char* argv[]) {
     // The first item in argv is the path to current executable. Use this to set
     // the Chrono Data Directory.
     std::filesystem::path path(argv[0]);
-    std::filesystem::path grandparent_path = path.parent_path().parent_path();
-    std::filesystem::path data_dir_path(grandparent_path.string());
-    data_dir_path.append("data").append("");
-    std::filesystem::path veh_data_path(data_dir_path.string());
-    veh_data_path.append("vehicle").append("");
-    SetChronoDataPath(data_dir_path.string());
-    SetDataPath(veh_data_path.string());
+    // std::filesystem::path grandparent_path = path.parent_path().parent_path();
+    // std::filesystem::path data_dir_path(grandparent_path.string());
+    // data_dir_path.append("data").append("");
+    // std::filesystem::path veh_data_path(data_dir_path.string());
+    // veh_data_path.append("vehicle").append("");
+    SetChronoDataPath(CHRONO_DATA_DIR);
+    SetDataPath(CHRONO_VEHICLE_DATA_DIR);
 
     // If available, use the second argv as the port.
     int PORT_NUMBER = 50009;

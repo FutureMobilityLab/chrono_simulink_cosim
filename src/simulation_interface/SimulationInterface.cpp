@@ -80,6 +80,7 @@ int TerrainInterface::FindClosestWheel(const chrono::ChVector3d& loc) const {
 SimulationInterface::SimulationInterface(
   const char* vehicle_model_name
 ) {
+  std::cout << "Creating SimulationInterface instance.\n";
   if (std::strcmp(vehicle_model_name, "sedan") == 0) {
     vehicle_model_ = new simulation_interface::Sedan_Model();
   } else if (std::strcmp(vehicle_model_name, "hmmwv") == 0) {
@@ -90,7 +91,7 @@ SimulationInterface::SimulationInterface(
     throw(std::invalid_argument("Invalid vehicle model name."));
   }
 
-  chrono::vehicle::SetDataPath("C:\\Users\\15309\\Project_Chrono\\chrono_simulink_cosim\\data\\vehicle\\");
+  chrono::vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
   const std::string data_file = chrono::vehicle::GetDataFile(
       vehicle_model_->VehicleJSON());
   std::cout << "data_file: " << data_file << "\n";
@@ -162,10 +163,12 @@ SimulationInterface::~SimulationInterface() {
     delete vehicle_model_;
     vehicle_model_ = nullptr;
   }
+  std::cout << "Destroying SimulationInterface instance.";
 }
 
 void SimulationInterface::Step(const double input[Input::LENGTH], double output[Output::LENGTH]) {
   double time = car_->GetSystem()->GetChTime();
+  std::cout << "Step() with time: " << time << "\n";
 
   if (vis_) {
     vis_->BeginScene();
@@ -349,6 +352,12 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::QUERY_POINT_X_RR] = query_point.x();
   output[Output::QUERY_POINT_Y_RR] = query_point.y();
   output[Output::QUERY_POINT_Z_RR] = query_point.z();
+
+  output[Output::SIM_TIME] = time;
+}
+
+double SimulationInterface::GetSimTime() {
+  return car_->GetSystem()->GetChTime();
 }
 
 }

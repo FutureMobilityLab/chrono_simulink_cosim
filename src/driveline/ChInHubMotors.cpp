@@ -44,7 +44,7 @@ namespace chrono::vehicle
     }
 
     auto motor = motors[wheel_index];
-    motor->SetTorqueFunction(std::make_shared<chrono::ChFunction_Const>(torque));
+    motor->SetTorqueFunction(std::make_shared<chrono::ChFunctionConst>(torque));
   }
 
   std::shared_ptr<chrono::ChLinkMotorRotationTorque> ChInHubMotors::GetMotor(WheelIndex wheel_index) const

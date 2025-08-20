@@ -1,12 +1,14 @@
 # This script calls a simple C++ library with Julia.
 
 # Path to the compiled DLL
-const lib_path = joinpath(@__DIR__, "..", "build", "Release", "simulation_interface_c_api.dll")
+const lib_path = joinpath(@__DIR__, "..", "build", "lib", "Release", "simulation_interface_c_api.dll")
 
 """
 This example shows how to call C++ code from Julia using ccall.
 We're interfacing with the SimulationInterface class defined in simulation_interface.cpp.
 """
+
+import Libdl
 
 # Define the same enum values as in the C++ header (Julia is 1-indexed).
 # This is used solely for array indexing.
@@ -66,14 +68,47 @@ module InterfaceOutput
     const WHEEL_STEER_ANG_FR = 53
     const WHEEL_STEER_ANG_RL = 54
     const WHEEL_STEER_ANG_RR = 55
-    const LENGTH = 52
+    const QUERY_POINT_X_FL = 56
+    const QUERY_POINT_Y_FL = 57
+    const QUERY_POINT_Z_FL = 58
+    const QUERY_POINT_X_FR = 59
+    const QUERY_POINT_Y_FR = 60
+    const QUERY_POINT_Z_FR = 61
+    const QUERY_POINT_X_RL = 62
+    const QUERY_POINT_Y_RL = 63
+    const QUERY_POINT_Z_RL = 64
+    const QUERY_POINT_X_RR = 65
+    const QUERY_POINT_Y_RR = 66
+    const QUERY_POINT_Z_RR = 67
+    const SIM_TIME = 68
+    const LENGTH = 69
 end
 
 module InterfaceInput
     const STEERING = 1
     const THROTTLE = 2
     const BRAKE = 3
-    const LENGTH = 4
+    const TERRAIN_HEIGHT_FL = 4
+    const TERRAIN_HEIGHT_FR = 5
+    const TERRAIN_HEIGHT_RL = 6
+    const TERRAIN_HEIGHT_RR = 7
+    const TERRAIN_NORMAL_X_FL = 8
+    const TERRAIN_NORMAL_Y_FL = 9
+    const TERRAIN_NORMAL_Z_FL = 10
+    const TERRAIN_NORMAL_X_FR = 11
+    const TERRAIN_NORMAL_Y_FR = 12
+    const TERRAIN_NORMAL_Z_FR = 13
+    const TERRAIN_NORMAL_X_RL = 14
+    const TERRAIN_NORMAL_Y_RL = 15
+    const TERRAIN_NORMAL_Z_RL = 16
+    const TERRAIN_NORMAL_X_RR = 17
+    const TERRAIN_NORMAL_Y_RR = 18
+    const TERRAIN_NORMAL_Z_RR = 19
+    const TERRAIN_MU_FL = 20
+    const TERRAIN_MU_FR = 21
+    const TERRAIN_MU_RL = 22
+    const TERRAIN_MU_RR = 23
+    const LENGTH = 24
 end
 
 # Define errors for simulation interface
@@ -94,12 +129,48 @@ struct StepError <: Exception
     msg::String
 end
 
+# Add this helper function to check available symbols in the library
+function get_available_symbols(lib_path::String)
+    println("Getting available symbols")
+    # Load the library temporarily to inspect symbols
+    lib = Libdl.dlopen(lib_path)
+    if lib == C_NULL
+        throw(LibraryLoadError(lib_path, "Failed to load library at $lib_path"))
+    end
+
+    println("Opened library.")
+    symbols = Libdl.dllist()
+    println("Got symbols")
+    Libdl.dlclose(lib)
+    println("Closed library")
+    return symbols
+end
+
 # Define a mutable struct to hold a pointer to the SimulationInterface object
 mutable struct SimulationInterface
     ptr::Ptr{Cvoid}
     
     # Constructor
     function SimulationInterface(vehicle_model_name::String)
+        # Check if the library can be loaded
+        # if !isfile(lib_path)
+        #     throw(LibraryLoadError(lib_path, "Library not found at $lib_path"))
+        # end
+
+        # # Check if CreateSimulationInterface exists
+        # available_symbols = get_available_symbols(lib_path)
+        # println(join(sort(available_symbols), "\n"))
+        # if !Libdl.dlsym_e(Libdl.dlopen(lib_path), :CreateSimulationInterface)
+        #     # Get available symbols for better error reporting
+        #     available_symbols = get_available_symbols(lib_path)
+        #     if isempty(available_symbols)
+        #         throw(InterfaceCreationError("CreateSimulationInterface not found in library, and no symbols could be loaded"))
+        #     else
+        #         error_msg = "CreateSimulationInterface not found in library. Available symbols:\n" * 
+        #                    join(sort(available_symbols), "\n")
+        #         throw(InterfaceCreationError(error_msg))
+        #     end
+        # end
         
         # Create a new SimulationInterface object
         ptr = ccall((:CreateSimulationInterface, lib_path), Ptr{Cvoid}, (Cstring,), vehicle_model_name)
@@ -116,7 +187,7 @@ mutable struct SimulationInterface
     end
 end
 
-# Function to free the C++ object
+# Function to free the C object
 function free(obj::SimulationInterface)
     if obj.ptr != C_NULL
         try
@@ -159,13 +230,14 @@ function main()
         interface = SimulationInterface("sedan")
 
         println("\nCalling step with sample inputs...")
-        input = [0.0, 1.0, 0.0]  # steering, throttle, brake
+        input = [0.0, 0.0, 0.0]  # steering, throttle, brake
         duration = 10.0
         dt = 2e-3
         num_steps = floor(Int64, duration / dt)
         output = zeros(Float64, (num_steps, InterfaceOutput.LENGTH - 1))
         for i = 1:num_steps
             output[i,:] = step(interface, input)
+            println(output[i, InterfaceOutput.CHASSIS_VEL_Z])
         end
         println("\nDone!")
         println("Final State:")
