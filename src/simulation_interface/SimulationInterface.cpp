@@ -1,4 +1,5 @@
 #include "src/simulation_interface/SimulationInterface.h"
+#include "src/utils/utils.h"
 
 #include "chrono/solver/ChIterativeSolverLS.h"
 #include "chrono/solver/ChDirectSolverLS.h"
@@ -118,17 +119,32 @@ namespace {
   void PrintTimeStepperType(chrono::ChSystem* system) {
     auto integrator = system->GetTimestepper();
     auto integrator_type = integrator->GetType();
+    std::cout << "Integrator: ";
     switch(integrator_type) {
-        case chrono::ChTimestepper::Type::EULER_IMPLICIT:
-            std::cout << "Integrator: Euler Implicit" << std::endl; break;
-        case chrono::ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED:
-            std::cout << "Integrator: Euler Implicit Linearized" << std::endl; break;
-        case chrono::ChTimestepper::Type::HHT:
-            std::cout << "Integrator: HHT" << std::endl; break;
-        case chrono::ChTimestepper::Type::NEWMARK:
-            std::cout << "Integrator: Newmark" << std::endl; break;
-        default:
-            std::cout << "Integrator: Unknown/Other (enum: " << static_cast<int>(integrator_type) << ")" << std::endl;
+      case chrono::ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED:
+          std::cout << "Euler Implicit Linearized" << std::endl; break;
+      case chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED:
+        std::cout << "Euler Implicit Projected" << std::endl; break;
+      case chrono::ChTimestepper::Type::EULER_IMPLICIT:
+        std::cout << "Euler Implicit" << std::endl; break;
+      case chrono::ChTimestepper::Type::TRAPEZOIDAL:
+        std::cout << "Trapezoidal" << std::endl; break;
+      case chrono::ChTimestepper::Type::TRAPEZOIDAL_LINEARIZED:
+        std::cout << "Trapezoidal Linearized" << std::endl; break;
+      case chrono::ChTimestepper::Type::HHT:
+        std::cout << "HHT" << std::endl; break;
+      case chrono::ChTimestepper::Type::HEUN:
+        std::cout << "Heun" << std::endl; break;
+      case chrono::ChTimestepper::Type::RUNGEKUTTA45:
+        std::cout << "Runge Kutta 45" << std::endl; break;
+      case chrono::ChTimestepper::Type::EULER_EXPLICIT:
+        std::cout << "Euler Explicit" << std::endl; break;
+      case chrono::ChTimestepper::Type::LEAPFROG:
+        std::cout << "Leapfrog" << std::endl; break;
+      case chrono::ChTimestepper::Type::NEWMARK:
+        std::cout << "Newmark" << std::endl; break;
+      default:
+        std::cout << "Unknown/Other (enum: " << static_cast<int>(integrator_type) << ")" << std::endl;
     }
   }
 }
@@ -228,7 +244,7 @@ SimulationInterface::SimulationInterface(
   {
     for (auto &wheel : car_->GetAxle(i)->GetWheels())
     {
-      auto tire = chrono::vehicle::ReadTireJSON(
+      auto tire = chrono::vehicle::ReadCustomTireJSON(
           chrono::vehicle::GetDataFile(vehicle_model_->TireJSON(i)));
       car_->InitializeTire(tire, wheel, tire_vis_type);
       tire->SetStepsize(tire_step_size_);
@@ -371,25 +387,25 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::WHEEL_ANG_VEL_RL] = car_->GetSpindleOmega(1, chrono::vehicle::VehicleSide::LEFT);
   output[Output::WHEEL_ANG_VEL_RR] = car_->GetSpindleOmega(1, chrono::vehicle::VehicleSide::RIGHT);
 
-  output[Output::TIRE_LONG_SLIP_FL] = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT)->GetLongitudinalSlip();
-  output[Output::TIRE_LONG_SLIP_FR] = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT)->GetLongitudinalSlip();
-  output[Output::TIRE_LONG_SLIP_RL] = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->GetLongitudinalSlip();
-  output[Output::TIRE_LONG_SLIP_RR] = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->GetLongitudinalSlip();
-
-  // Add lateral slip angles
-  output[Output::TIRE_LAT_SLIP_FL] = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT)->GetSlipAngle();
-  output[Output::TIRE_LAT_SLIP_FR] = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT)->GetSlipAngle();
-  output[Output::TIRE_LAT_SLIP_RL] = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->GetSlipAngle();
-  output[Output::TIRE_LAT_SLIP_RR] = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->GetSlipAngle();
-
   // Get tires.
-  auto tire_frame = chrono::ChCoordsys<>();
   const auto tire_fl = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT);
   const auto tire_fr = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT);
   const auto tire_rl = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT);
   const auto tire_rr = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT);
 
+  output[Output::TIRE_LONG_SLIP_FL] = tire_fl->GetLongitudinalSlip();
+  output[Output::TIRE_LONG_SLIP_FR] = tire_fr->GetLongitudinalSlip();
+  output[Output::TIRE_LONG_SLIP_RL] = tire_rl->GetLongitudinalSlip();
+  output[Output::TIRE_LONG_SLIP_RR] = tire_rr->GetLongitudinalSlip();
+
+  // Add lateral slip angles
+  output[Output::TIRE_LAT_SLIP_FL] = tire_fl->GetSlipAngle();
+  output[Output::TIRE_LAT_SLIP_FR] = tire_fr->GetSlipAngle();
+  output[Output::TIRE_LAT_SLIP_RL] = tire_rl->GetSlipAngle();
+  output[Output::TIRE_LAT_SLIP_RR] = tire_rr->GetSlipAngle();
+
   // Add tire forces in tire frame.
+  auto tire_frame = chrono::ChCoordsys<>();
   const auto force_fl = tire_fl->ReportTireForceLocal(terrain_.get(), tire_frame);
   const auto force_fr = tire_fr->ReportTireForceLocal(terrain_.get(), tire_frame);
   const auto force_rl = tire_rl->ReportTireForceLocal(terrain_.get(), tire_frame);

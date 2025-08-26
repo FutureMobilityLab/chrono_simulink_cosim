@@ -23,3 +23,9 @@ create_executable(force_rack_pinion_veh_example
     DEPS simulation_interface utils steering vehicle
     USES_CHRONO
 )
+
+create_executable(tire_test_rig
+    SRCS TireTestRig.cpp
+    DEPS utils
+    USES_CHRONO
+)

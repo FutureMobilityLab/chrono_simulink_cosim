@@ -46,8 +46,9 @@ class Sedan_Model : public Vehicle_Model {
     virtual std::string VehicleJSON() const override { return "sedan_force/vehicle/Sedan_Vehicle.json"; }
     virtual std::string TireJSON(unsigned int axle) const override {
         // return "sedan_force/tire/Sedan_RigidTire.json";
-        return "sedan_force/tire/Sedan_TMeasyTire.json";
+        // return "sedan_force/tire/Sedan_TMeasyTire.json";
         // return "sedan_force/tire/Sedan_Pac02Tire.json";
+        return "sedan_force/tire/bridgestone_P255_35R18.json";
     }
     virtual std::string EngineJSON() const override {
         //return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";

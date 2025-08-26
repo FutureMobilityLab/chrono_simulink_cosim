@@ -8,3 +8,17 @@ create_library(salaani_model STATIC
     HDRS salaani_model.h
     DEPS
 )
+
+create_library(ch_salaani_tire STATIC
+    SRCS ChSalaaniTire.cpp
+    HDRS ChSalaaniTire.h
+    DEPS
+    USES_CHRONO
+)
+
+create_library(salaani_tire STATIC
+    SRCS SalaaniTire.cpp
+    HDRS SalaaniTire.h
+    DEPS ch_salaani_tire
+    USES_CHRONO
+)

@@ -1,0 +1,93 @@
+{
+  "Name": "Bridgestone P255/35R18",
+  "Type": "Tire",
+  "Template": "SalaaniTire",
+
+  // "Unloaded Radius [m]": 0.3266,
+  "Rim Radius [m]": 0.2286,
+  "Aspect Ratio [%]": 70,
+  "Maximum Load [kg]": 545,
+  "Width [m]": 0.255,
+  "Mass [kg]": 11.5,
+  "Inertia [kg.m2]": [0.156, 0.679, 0.156],
+
+  "SalaaniCoeffs": {
+    "lateral_stiffness": {
+      "C1": -1.59242290928,
+      "C2": -1.52199874366,
+      "Cam": 40107.04565,
+      "FZCam": 3500
+    },
+    "longitudinal_stiffness": {
+      "Ckm": 5099.418257,
+      "FZCKM": 198.3217617,
+      "n_val": 0.91648575346
+    },
+    "lateral_peak_friction": {
+      "eta1_lat": -0.07042627962,
+      "eta2_lat": 0.000002824063502,
+      "mu_p0_lat": 1.208943826166
+    },
+    "longitudinal_peak_friction": {
+      "eta0_long": 0.0,
+      "eta1_long": -0.01439837983,
+      "mu_p0_long": 1.243813670770,
+      "FZ0": 400.4967669
+    },
+    "lateral_friction_decay": {
+      "d1_lat": -0.0000003135537996,
+      "d2_lat": 0.0009273982487,
+      "d3_lat": -0.07310137784,
+      "epsilon_sy": 1.05
+    },
+    "longitudinal_friction_decay": {
+      "d1_long": -0.00000007106354884,
+      "d2_long": 0.0002640661279,
+      "d3_long": 0.124604606202,
+      "epsilon_xx": 1.05
+    },
+    "aligning_moment": {
+      "tz1": -0.000000005429316539,
+      "tz2": -0.000005665247043,
+      "epsilon_x": 0.01,
+      "m1": 0.6,
+      "m0": 0.785398163397
+    },
+    "overturning_moment": {
+      "tx1": 0.00000001745817181,
+      "tx2": -0.000009717871139,
+      "tx3": -0.02295062296
+    },
+    "inclination_angle": {
+      "Cr1": 0.763265331360,
+      "Cr2": 0.0003215889442
+    },
+    "additional_parameters": {
+      "Rt": 12.25,
+      "Cz_contact": 2043.428888,
+      "beta": 0.717385585628,
+      "plysteer": -0.0001788346665
+    }
+  },
+
+  "DahlCoeffs": {
+    "sigma0": 10000.0,
+    "sigma1": 5000.0
+  },
+
+  "SpeedBasedTireModelBlending": {
+    "Friction Blend Begin [m/s]": 0.0,
+    "Friction Blend End [m/s]": 0.0
+  },
+
+  "TimeBasedTireModelBlending": {
+    "Use Startup Transition": false,
+    "Begin Start Transition [s]": 0,
+    "End Start Transition [s]": 4.0
+  },
+
+  "Visualization": {
+    "Mesh Filename Left": "sedan_force/sedan_tire.obj",
+    "Mesh Filename Right": "sedan_force/sedan_tire.obj"
+  }
+}

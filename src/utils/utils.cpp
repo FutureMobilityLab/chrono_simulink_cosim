@@ -1,13 +1,24 @@
 // Utilities that mirror Project Chrono's Vehicle Utilities. This is intended to
 // replace ReadSteeringJSON.
 
+#include "src/utils/utils.h"
 #include "src/steering/RackPinionForce.h"
+#include "src/tire/SalaaniTire.h"
 
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 
 #include "chrono_vehicle/wheeled_vehicle/steering/PitmanArm.h"
 #include "chrono_vehicle/wheeled_vehicle/steering/RackPinion.h"
 #include "chrono_vehicle/wheeled_vehicle/steering/RotaryArm.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ANCFTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/FEATire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/FialaTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ReissnerTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/RigidTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/TMeasyTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/TMsimpleTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/Pac89Tire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/Pac02Tire.h"
 
 #include "chrono_thirdparty/rapidjson/filereadstream.h"
 #include "chrono_thirdparty/rapidjson/istreamwrapper.h"
@@ -65,6 +76,51 @@ namespace chrono
 
       return steering;
     }
+
+    std::shared_ptr<ChTire> ReadCustomTireJSON(const std::string& filename) {
+      std::shared_ptr<ChTire> tire;
+  
+      rapidjson::Document d;
+      ReadFileJSON(filename, d);
+      if (d.IsNull())
+          return nullptr;
+  
+      // Check that the given file is a tire specification file.
+      assert(d.HasMember("Type"));
+      std::string type = d["Type"].GetString();
+      assert(type.compare("Tire") == 0);
+  
+      // Extract the tire type.
+      assert(d.HasMember("Template"));
+      std::string subtype = d["Template"].GetString();
+  
+      // Create the tire using the appropriate template.
+      if (subtype.compare("RigidTire") == 0) {
+          tire = chrono_types::make_shared<RigidTire>(d);
+      } else if (subtype.compare("TMeasyTire") == 0) {
+          tire = chrono_types::make_shared<TMeasyTire>(d);
+      } else if (subtype.compare("TMsimpleTire") == 0) {
+          tire = chrono_types::make_shared<TMsimpleTire>(d);
+      } else if (subtype.compare("FialaTire") == 0) {
+          tire = chrono_types::make_shared<FialaTire>(d);
+      } else if (subtype.compare("Pac89Tire") == 0) {
+          tire = chrono_types::make_shared<Pac89Tire>(d);
+      } else if (subtype.compare("Pac02Tire") == 0) {
+          tire = chrono_types::make_shared<Pac02Tire>(d);
+      } else if (subtype.compare("ANCFTire") == 0) {
+          tire = chrono_types::make_shared<ANCFTire>(d);
+      } else if (subtype.compare("ReissnerTire") == 0) {
+          tire = chrono_types::make_shared<ReissnerTire>(d);
+      } else if (subtype.compare("FEATire") == 0) {
+          tire = chrono_types::make_shared<FEATire>(d);
+      } else if (subtype.compare("SalaaniTire") == 0) {
+          tire = chrono_types::make_shared<SalaaniTire>(d);
+      } else {
+          throw std::invalid_argument("Tire type not supported in ReadTireJSON.");
+      }
+  
+      return tire;
+  }
 
   } // namespace vehicle
 } // namespace chrono
