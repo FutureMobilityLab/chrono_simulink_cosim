@@ -1,12 +1,9 @@
-# simulation_interface_py_wrapper.py
-
 import ctypes
 import os
 import sys
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-import matplotlib.pyplot as plt
 from typing import Union
 
 
@@ -19,7 +16,7 @@ if DLL_DIR not in os.environ["PATH"]:
     print(f"Temporarily added '{DLL_DIR}' to PATH for DLL discovery.")
 
 
-class SimApiErrorCode:
+class ErrorCode:
     """Error codes returned by the C API functions."""
 
     OK = 0
@@ -28,7 +25,7 @@ class SimApiErrorCode:
     ERROR_INTERNAL_FAILURE = 3
 
 
-class InterfaceInput:
+class Input:
     """Constants for indexing the simulation input array, matching C++ enum."""
 
     STEERING = 0
@@ -57,7 +54,7 @@ class InterfaceInput:
     LENGTH = 23
 
 
-class InterfaceOutput:
+class Output:
     """Constants for indexing the simulation output array, matching C++ enum."""
 
     CHASSIS_POS_X = 0
@@ -128,12 +125,24 @@ class InterfaceOutput:
     QUERY_POINT_Y_RR = 65
     QUERY_POINT_Z_RR = 66
     SIM_TIME = 67
-    LENGTH = 68
+    TIRE_MOMENT_X_FL = 68
+    TIRE_MOMENT_Y_FL = 69
+    TIRE_MOMENT_Z_FL = 70
+    TIRE_MOMENT_X_FR = 71
+    TIRE_MOMENT_Y_FR = 72
+    TIRE_MOMENT_Z_FR = 73
+    TIRE_MOMENT_X_RL = 74
+    TIRE_MOMENT_Y_RL = 75
+    TIRE_MOMENT_Z_RL = 76
+    TIRE_MOMENT_X_RR = 77
+    TIRE_MOMENT_Y_RR = 78
+    TIRE_MOMENT_Z_RR = 79
+    LENGTH = 80
 
 
 # --- Define C types for array inputs/outputs using the correct lengths ---
-C_DOUBLE_ARRAY_INPUT = ctypes.c_double * InterfaceInput.LENGTH
-C_DOUBLE_ARRAY_OUTPUT = ctypes.c_double * InterfaceOutput.LENGTH
+C_DOUBLE_ARRAY_INPUT = ctypes.c_double * Input.LENGTH
+C_DOUBLE_ARRAY_OUTPUT = ctypes.c_double * Output.LENGTH
 
 
 try:
@@ -204,7 +213,7 @@ class SimulationInterface:
             config_file_bytes, ctypes.byref(obj_ptr_out)
         )
 
-        if result_code != SimApiErrorCode.OK:
+        if result_code != ErrorCode.OK:
             raise RuntimeError(
                 f"Failed to create C++ SimulationInterface object. "
                 f"C API returned error code: {result_code}."
@@ -232,7 +241,7 @@ class SimulationInterface:
         step_size_out = ctypes.c_double()
         result_code = _sim_lib.GetStepSize(self._obj_ptr, ctypes.byref(step_size_out))
 
-        if result_code != SimApiErrorCode.OK:
+        if result_code != ErrorCode.OK:
             raise RuntimeError(
                 f"Failed to get step size from C API. " f"Error code: {result_code}."
             )
@@ -249,7 +258,7 @@ class SimulationInterface:
 
         Returns:
             pd.DataFrame: A pandas DataFrame with a single row,
-                          its columns corresponding to the InterfaceOutput constants.
+                          its columns corresponding to the Output constants.
         """
         if isinstance(input, pd.DataFrame) or isinstance(input, pd.Series):
             input_np = input.to_numpy(dtype=np.float64)
@@ -267,10 +276,9 @@ class SimulationInterface:
                 raise ValueError(f"Input must be 1D-like, got ({n_rows}, {n_cols})")
             input_np = input_np.flatten()
 
-        if len(input_np) != InterfaceInput.LENGTH:
+        if len(input_np) != Input.LENGTH:
             raise ValueError(
-                f"Input expected to be {InterfaceInput.LENGTH}, but got"
-                f"{len(input_np)}"
+                f"Input expected to be {Input.LENGTH}, but got" f"{len(input_np)}"
             )
 
         # Convert NumPy array to ctypes array
@@ -281,50 +289,8 @@ class SimulationInterface:
 
         # Call the C API step function and check the error code
         result_code = _sim_lib.Step(self._obj_ptr, c_input, c_output)
-        if result_code != SimApiErrorCode.OK:
+        if result_code != ErrorCode.OK:
             raise RuntimeError(f"Step failed with C API error code: {result_code}")
 
         # Convert C output array back to a NumPy array.
         return np.array(list(c_output), dtype=np.float64)
-
-
-if __name__ == "__main__":
-    # Ensure to replace "your_config_file.json" with an actual path
-    # relevant to your SimulationInterface's constructor.
-    config_file_path = "sedan"  # Example path, replace with your actual config file
-
-    # Create an instance of the wrapper
-    sim = SimulationInterface(config_file_path)
-
-    # Example input data as a pandas DataFrame
-    # Initialize a DataFrame with zeros and correct columns
-    n_steps = int(30 / sim.get_step_size())
-    input_data_np = np.zeros((n_steps, InterfaceInput.LENGTH))
-    output_data_np = np.zeros((n_steps, InterfaceOutput.LENGTH))
-
-    for i in range(input_data_np.shape[0]):
-        input_data_np[i, InterfaceInput.STEERING] = 0.1
-        input_data_np[i, InterfaceInput.THROTTLE] = 0.5
-        input_data_np[i, InterfaceInput.BRAKE] = 0.0
-        input_data_np[i, InterfaceInput.TERRAIN_NORMAL_Z_FL] = 1.0
-        input_data_np[i, InterfaceInput.TERRAIN_NORMAL_Z_FR] = 1.0
-        input_data_np[i, InterfaceInput.TERRAIN_NORMAL_Z_RL] = 1.0
-        input_data_np[i, InterfaceInput.TERRAIN_NORMAL_Z_RR] = 1.0
-        input_data_np[i, InterfaceInput.TERRAIN_MU_FL] = 0.8
-        input_data_np[i, InterfaceInput.TERRAIN_MU_FR] = 0.8
-        input_data_np[i, InterfaceInput.TERRAIN_MU_RL] = 0.8
-        input_data_np[i, InterfaceInput.TERRAIN_MU_RR] = 0.8
-        output_data_np[i, :] = sim.step(input_data_np[i, :])
-
-    for i in range(output_data_np.shape[1]):
-        print(
-            f"output_data_np[:, {i}]: [{np.min(output_data_np[:,i]):.6f} -> "
-            f"{np.max(output_data_np[:,i]):.6f}]"
-        )
-
-    plt.figure()
-    plt.plot(
-        output_data_np[:, InterfaceOutput.CHASSIS_POS_X],
-        output_data_np[:, InterfaceOutput.CHASSIS_POS_Y],
-    )
-    plt.show()

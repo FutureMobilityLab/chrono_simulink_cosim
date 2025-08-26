@@ -3,6 +3,8 @@
 #include <cmath>
 #include <algorithm>
 
+namespace tire {
+
 TireForces SalaaniTireModel::calculateTireForces(
     const TireParameters& tire, 
     double ALPHA, double S, 
@@ -105,3 +107,5 @@ TireForces SalaaniTireModel::calculateTireForces(
   
   return forces;
 }
+
+} // namespace tire

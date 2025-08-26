@@ -10,12 +10,13 @@
     "Inertia":                  [0.138, 0.00009, 0.138],
     "Radius":                   0.03,
     "Length":                   0.5,
-    "Damping":                  1000.0
+    "Damping":                  1000.0,
+    "Stiffness":                0.0
   },
 
   "Pinion":
   {
-    "Radius":                   0.3,
-    "Maximum Angle (deg)":      10.5
+    "Radius":                   0.010,
+    "Maximum Angle (deg)":      60.0
   }
 }

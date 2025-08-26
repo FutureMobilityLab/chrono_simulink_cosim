@@ -85,7 +85,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON) # Essential for shared libraries
 

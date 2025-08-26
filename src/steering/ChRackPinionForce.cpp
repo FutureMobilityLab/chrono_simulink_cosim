@@ -100,23 +100,28 @@ namespace chrono::vehicle
   // -----------------------------------------------------------------------------
   void ChRackPinionForce::Synchronize(double time, const DriverInputs &driver_inputs)
   {
-    // Interpret the steering input as a torque and scale it by radius to get
-    // linear force on the rack.
     const double pinion_radius = GetPinionRadius();
-    const double force = driver_inputs.m_steering * pinion_radius;
+    const double force = driver_inputs.m_steering / pinion_radius;
     const double angle = GetPinionAngle();
-    const ChVector3d reactive_force = m_motor->GetMotorForce();
-    const double bumper_spring_constant = 100000.0;
-
+    const double angle_rate = GetPinionAngleRate();
+    const double bumper_spring_constant = 5000.0;
+    const double bumper_damping = 500.0;
+    const auto max_angle = GetMaxAngle();
+    const auto damping_force = bumper_damping * angle_rate;
+  
     if (auto fun = std::dynamic_pointer_cast<ChFunctionConst>(
             m_motor->GetForceFunction())) {
-      const auto max_angle = GetMaxAngle();
-      // Enforce maximum displacement.
-      if (std::abs(angle) > max_angle) {
-        fun->SetConstant(-bumper_spring_constant * (angle - max_angle));
-      } else {
-        fun->SetConstant(force);
+      double final_force = force;
+      
+      if (angle > max_angle)  {
+        // Spring + damping force pushing back toward limit
+        final_force = -bumper_spring_constant * (angle - max_angle) - damping_force;
+      } else if (angle < -max_angle) {
+        // Spring + damping force pushing back toward limit
+        final_force = -bumper_spring_constant * (angle + max_angle) - damping_force;
       }
+      
+      fun->SetConstant(final_force);
     }
   }
 
@@ -163,8 +168,20 @@ namespace chrono::vehicle
   }
 
   double ChRackPinionForce::GetPinionAngle() {
-    return m_motor->GetMotorPos() / GetPinionRadius();
+    return m_motor->GetMotorPos() / 2 / GetPinionRadius();
   }
+
+  double ChRackPinionForce::GetPinionAngleRate() {
+    return m_motor->GetMotorPosDt() / 2 / GetPinionRadius();
+  }
+
+  std::shared_ptr<ChLinkMotorLinearForce> ChRackPinionForce::GetMotor() {
+    return m_motor;
+  };
+
+  std::shared_ptr<ChLinkTSDA> ChRackPinionForce::GetSpringDamper() {
+    return m_springDamper;
+  };
 
   // -----------------------------------------------------------------------------
   std::shared_ptr<ChLinkTSDA::ForceFunctor> ChRackPinionForce::GetSpringDamperForceElement() const {

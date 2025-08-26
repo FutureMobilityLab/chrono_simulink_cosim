@@ -1,5 +1,5 @@
 create_executable(demo_salaani_model
-    SRCS demo_model.cpp
+    SRCS demo_salaani_model.cpp
     DEPS salaani_model
 )
 

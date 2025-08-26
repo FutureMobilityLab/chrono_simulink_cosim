@@ -8,6 +8,8 @@
 #include <iomanip>
 #include <string>
 
+namespace tire {
+
 // Helper function to calculate peak friction coefficients
 std::pair<double, double> calculatePeakFriction(const TireParameters& tire, double FZ) {
   double MURATIO = tire.MUNOM / tire.MUNTEST;
@@ -390,8 +392,10 @@ void demonstrateTireModel() {
   }
 }
 
+} // namespace tire
+
 int main() {
-  demonstrateTireModel();
-  exportTireModelToCsv();
+  tire::demonstrateTireModel();
+  tire::exportTireModelToCsv();
   return 0;
 }

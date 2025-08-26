@@ -1,5 +1,10 @@
 #include "src/simulation_interface/SimulationInterface.h"
 
+#include "chrono/solver/ChIterativeSolverLS.h"
+#include "chrono/solver/ChDirectSolverLS.h"
+#include "chrono/solver/ChSolverPSOR.h"
+#include "chrono/solver/ChSolverBB.h"
+#include "chrono/solver/ChSolverPMINRES.h"
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChPowertrainAssembly.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -9,6 +14,7 @@
 #include <iostream>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 namespace simulation_interface {
 
@@ -77,10 +83,59 @@ int TerrainInterface::FindClosestWheel(const chrono::ChVector3d& loc) const {
   return closest_wheel;
 }
 
+namespace {
+  void PrintSolverType(chrono::ChSystem* system) {
+    // For solver
+    auto solver = system->GetSolver();
+    auto solver_type = solver->GetType();
+    std::cout << "Solver: ";
+    switch(solver_type) {
+      case chrono::ChSolver::Type::PSOR:
+          std::cout << "PSOR" << std::endl; break;
+      case chrono::ChSolver::Type::PSSOR:
+        std::cout << "PSSOR" << std::endl; break;
+      case chrono::ChSolver::Type::PJACOBI:
+        std::cout << "PJACOBI" << std::endl; break;
+      case chrono::ChSolver::Type::PMINRES:
+          std::cout << "PMINRES" << std::endl; break;
+      case chrono::ChSolver::Type::BARZILAIBORWEIN:
+        std::cout << "BARZILAIBORWEIN\n"; break;
+      case chrono::ChSolver::Type::APGD:
+        std::cout << "APGD\n"; break;
+      case chrono::ChSolver::Type::BICGSTAB:
+            std::cout << "BiCGSTAB" << std::endl; break;
+      case chrono::ChSolver::Type::GMRES:
+          std::cout << "GMRES" << std::endl; break;
+      case chrono::ChSolver::Type::SPARSE_LU:
+          std::cout << "Sparse LU" << std::endl; break;
+      case chrono::ChSolver::Type::SPARSE_QR:
+          std::cout << "Sparse QR" << std::endl; break;
+      default:
+          std::cout << "Unknown/Other (enum: " << static_cast<int>(solver_type) << ")" << std::endl;
+    }
+  }
+
+  void PrintTimeStepperType(chrono::ChSystem* system) {
+    auto integrator = system->GetTimestepper();
+    auto integrator_type = integrator->GetType();
+    switch(integrator_type) {
+        case chrono::ChTimestepper::Type::EULER_IMPLICIT:
+            std::cout << "Integrator: Euler Implicit" << std::endl; break;
+        case chrono::ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED:
+            std::cout << "Integrator: Euler Implicit Linearized" << std::endl; break;
+        case chrono::ChTimestepper::Type::HHT:
+            std::cout << "Integrator: HHT" << std::endl; break;
+        case chrono::ChTimestepper::Type::NEWMARK:
+            std::cout << "Integrator: Newmark" << std::endl; break;
+        default:
+            std::cout << "Integrator: Unknown/Other (enum: " << static_cast<int>(integrator_type) << ")" << std::endl;
+    }
+  }
+}
+
 SimulationInterface::SimulationInterface(
   const char* vehicle_model_name
 ) {
-  std::cout << "Creating SimulationInterface instance.\n";
   if (std::strcmp(vehicle_model_name, "sedan") == 0) {
     vehicle_model_ = new simulation_interface::Sedan_Model();
   } else if (std::strcmp(vehicle_model_name, "hmmwv") == 0) {
@@ -94,10 +149,58 @@ SimulationInterface::SimulationInterface(
   chrono::vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
   const std::string data_file = chrono::vehicle::GetDataFile(
       vehicle_model_->VehicleJSON());
-  std::cout << "data_file: " << data_file << "\n";
   car_ = new chrono::vehicle::WheeledVehicleForce(
     data_file,
     vehicle_model_->ContactMethod());
+
+  const auto system = car_->GetSystem();
+  // system->SetSolverType(chrono::ChSolver::Type::PMINRES);
+  // const auto solver = system->GetSolver();
+  // if (auto bb_solver = std::dynamic_pointer_cast<chrono::ChSolverBB>(solver)) {
+  //   std::cout << "MaxIterations: " << bb_solver->GetMaxIterations() << "\n";
+  //   bb_solver->SetMaxIterations(800);  // Increase iterations
+  //   std:: cout << "Tolerance: " << bb_solver->GetTolerance() << "\n";
+  //   bb_solver->SetTolerance(1e-12);    // Tighter tolerance
+  // }
+
+  // All comments are made with TMeasy tire.
+  // This eliminates the chattering (1.39 real/sim)
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT);
+  // This has chattering (0.4 real/sim) (no chattering with Pac89 tire)
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED);
+  // This has chattering (0.7 real/sim)
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::EULER_IMPLICIT_PROJECTED);
+  // This works and has (1.5 real/sim)
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::TRAPEZOIDAL);
+  // This works and is fast (<0.5 real/sim)
+  system->SetTimestepperType(chrono::ChTimestepper::Type::TRAPEZOIDAL_LINEARIZED);
+  // This fails.
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::HHT);
+  // This fails: HHT: Reached minimum allowable step size.
+  // auto timestepper = chrono_types::make_shared<chrono::ChTimestepperHHT>(system);
+  // timestepper->SetMinStepSize(1e-10);
+  // timestepper->SetMaxIters(4);
+  // timestepper->SetAlpha(-0.1);
+  // system->SetTimestepper(timestepper);
+  // This fails.
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::HEUN);
+  // This fails.
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::RUNGEKUTTA45);
+  // This fails.
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::EULER_EXPLICIT);
+  // This fails.
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::LEAPFROG);
+  // This works (1.9 real/sim)
+  // system->SetTimestepperType(chrono::ChTimestepper::Type::NEWMARK);
+
+  PrintSolverType(system);
+  PrintTimeStepperType(system);
+
+  // auto hht_integrator = std::make_shared<chrono::ChTimestepperHHT>();
+  // // hht_integrator->SetAlpha(-0.1);
+  // // hht_integrator->SetMaxIters(20);
+  // // hht_integrator->SetAbsTolerances(1e-6);
+  // system->SetTimestepper(hht_integrator);
 
   const chrono::ChVector3<> initLoc(0, 0, 0.5);
   const double initYaw = 0.0 * chrono::CH_DEG_TO_RAD;
@@ -128,10 +231,10 @@ SimulationInterface::SimulationInterface(
       auto tire = chrono::vehicle::ReadTireJSON(
           chrono::vehicle::GetDataFile(vehicle_model_->TireJSON(i)));
       car_->InitializeTire(tire, wheel, tire_vis_type);
+      tire->SetStepsize(tire_step_size_);
     }
   }
 
-  auto system = car_->GetSystem();
   system->SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
 
   // Create our custom terrain instead of RigidTerrain
@@ -163,12 +266,10 @@ SimulationInterface::~SimulationInterface() {
     delete vehicle_model_;
     vehicle_model_ = nullptr;
   }
-  std::cout << "Destroying SimulationInterface instance.";
 }
 
 void SimulationInterface::Step(const double input[Input::LENGTH], double output[Output::LENGTH]) {
   double time = car_->GetSystem()->GetChTime();
-  std::cout << "Step() with time: " << time << "\n";
 
   if (vis_) {
     vis_->BeginScene();
@@ -221,7 +322,6 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
       driver_inputs = driver_->GetInputs();
       driver_->Synchronize(time);
       driver_->Advance(step_size_);
-      driver_inputs.m_steering *= 4.0;
     } else {
       driver_inputs.m_steering = input[Input::STEERING];
       driver_inputs.m_throttle = input[Input::THROTTLE];
@@ -282,12 +382,18 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::TIRE_LAT_SLIP_RL] = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->GetSlipAngle();
   output[Output::TIRE_LAT_SLIP_RR] = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->GetSlipAngle();
 
-  // Add tire forces in tire frame
+  // Get tires.
   auto tire_frame = chrono::ChCoordsys<>();
-  const auto force_fl = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_.get(), tire_frame);
-  const auto force_fr = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_.get(), tire_frame);
-  const auto force_rl = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT)->ReportTireForceLocal(terrain_.get(), tire_frame);
-  const auto force_rr = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT)->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto tire_fl = car_->GetTire(0, chrono::vehicle::VehicleSide::LEFT);
+  const auto tire_fr = car_->GetTire(0, chrono::vehicle::VehicleSide::RIGHT);
+  const auto tire_rl = car_->GetTire(1, chrono::vehicle::VehicleSide::LEFT);
+  const auto tire_rr = car_->GetTire(1, chrono::vehicle::VehicleSide::RIGHT);
+
+  // Add tire forces in tire frame.
+  const auto force_fl = tire_fl->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_fr = tire_fr->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_rl = tire_rl->ReportTireForceLocal(terrain_.get(), tire_frame);
+  const auto force_rr = tire_rr->ReportTireForceLocal(terrain_.get(), tire_frame);
 
   output[Output::TIRE_FORCE_LONG_FL] = force_fl.force.x();
   output[Output::TIRE_FORCE_LONG_FR] = force_fr.force.x();
@@ -303,6 +409,26 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::TIRE_FORCE_VERT_FR] = force_fr.force.z();
   output[Output::TIRE_FORCE_VERT_RL] = force_rl.force.z();
   output[Output::TIRE_FORCE_VERT_RR] = force_rr.force.z();
+  
+  // Front Left tire moments
+  output[Output::TIRE_MOMENT_X_FL] = force_fl.moment.x();
+  output[Output::TIRE_MOMENT_Y_FL] = force_fl.moment.y();
+  output[Output::TIRE_MOMENT_Z_FL] = force_fl.moment.z();
+
+  // Front Right tire moments  
+  output[Output::TIRE_MOMENT_X_FR] = force_fr.moment.x();
+  output[Output::TIRE_MOMENT_Y_FR] = force_fr.moment.y();
+  output[Output::TIRE_MOMENT_Z_FR] = force_fr.moment.z();
+
+  // Rear Left tire moments
+  output[Output::TIRE_MOMENT_X_RL] = force_rl.moment.x();
+  output[Output::TIRE_MOMENT_Y_RL] = force_rl.moment.y();
+  output[Output::TIRE_MOMENT_Z_RL] = force_rl.moment.z();
+
+  // Rear Right tire moments
+  output[Output::TIRE_MOMENT_X_RR] = force_rr.moment.x();
+  output[Output::TIRE_MOMENT_Y_RR] = force_rr.moment.y();
+  output[Output::TIRE_MOMENT_Z_RR] = force_rr.moment.z();
 
   // Add wheel torques
   output[Output::WHEEL_TORQUE_DRIVE_FL] = car_->GetDriveline()->GetSpindleTorque(0, chrono::vehicle::VehicleSide::LEFT);
@@ -316,7 +442,20 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::WHEEL_TORQUE_BRAKE_RR] = car_->GetBrake(1, chrono::vehicle::VehicleSide::RIGHT)->GetBrakeTorque();
 
   // Add steering pinion angle
+  const auto steering_link = car_->GetSteering(0)->GetSteeringLink();
+  const auto steering_force_abs = steering_link->GetAppliedForce();
+  const auto link_frame_abs = steering_link->GetFrameRefToAbs();
+  const auto steering_force_local = link_frame_abs.TransformDirectionParentToLocal(steering_force_abs);
+  const auto acceleration = steering_link->GetPosDt2();
+  const auto acceleration_local = link_frame_abs.TransformDirectionParentToLocal(acceleration);
+  // if (std::abs(acceleration.x()) > 2 || std::abs(acceleration.y()) > 2 ||
+  //     std::abs(acceleration.z()) > 2) {
+  //   std::cout << "Time: " << time << ", Force: " << steering_force_local.z() << " Acc: " << acceleration.x()
+  //             << ", " << acceleration.y() << ", " << acceleration.z() << "\n";
+  // }
   output[Output::STEERING_PINION_ANGLE] = car_->GetPinionAngle();
+  // output[Output::STEERING_PINION_ANGLE] = steering_force_local.z();
+  // output[Output::STEERING_PINION_ANGLE] = link_frame_abs.TransformDirectionParentToLocal(steering_link->GetPos()).x();
 
   // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
   const auto wheel_normal_fl = car_->GetWheel(0,chrono::vehicle::VehicleSide::LEFT)->GetState().rot.GetAxisY();
@@ -354,6 +493,13 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   output[Output::QUERY_POINT_Z_RR] = query_point.z();
 
   output[Output::SIM_TIME] = time;
+
+  // Validate output.
+  for (size_t i = 0; i < Output::LENGTH; i++) {
+    if (std::isnan(output[i])) {
+      throw std::runtime_error("Got nan for output[" + std::to_string(i) + "].");
+    }
+  }
 }
 
 double SimulationInterface::GetSimTime() {

@@ -66,6 +66,13 @@ namespace chrono::vehicle
     /// Return the current steering angle (in radians).
     double GetPinionAngle();
 
+    // Return the current steering angle rate (in radians/second).
+    double GetPinionAngleRate();
+
+    std::shared_ptr<ChLinkMotorLinearForce> GetMotor();
+
+    std::shared_ptr<ChLinkTSDA> GetSpringDamper();
+
   protected:
     virtual void InitializeInertiaProperties() override;
     virtual void UpdateInertiaProperties() override;

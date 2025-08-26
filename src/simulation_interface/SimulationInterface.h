@@ -45,7 +45,7 @@ class Sedan_Model : public Vehicle_Model {
     virtual std::string ModelName() const override { return "Sedan"; }
     virtual std::string VehicleJSON() const override { return "sedan_force/vehicle/Sedan_Vehicle.json"; }
     virtual std::string TireJSON(unsigned int axle) const override {
-        //return "sedan_force/tire/Sedan_RigidTire.json";
+        // return "sedan_force/tire/Sedan_RigidTire.json";
         return "sedan_force/tire/Sedan_TMeasyTire.json";
         // return "sedan_force/tire/Sedan_Pac02Tire.json";
     }
@@ -54,8 +54,8 @@ class Sedan_Model : public Vehicle_Model {
         return "sedan_force/powertrain/Sedan_EngineShafts.json";
     }
     virtual std::string TransmissionJSON() const override {
-        //return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
-        return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
+        return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
+        // return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
     }
     virtual double CameraDistance() const override { return 6.0; }
     virtual chrono::ChContactMethod ContactMethod() const override { return chrono::ChContactMethod::SMC; }
@@ -69,10 +69,10 @@ class HMMWV_Model : public Vehicle_Model {
     virtual std::string VehicleJSON() const override { return "hmmwv/vehicle/HMMWV_Vehicle_Force.json"; }
     virtual std::string TireJSON(unsigned int axle) const override {
         //return "hmmwv/tire/HMMWV_RigidTire.json";
-        //return "hmmwv/tire/HMMWV_FialaTire.json";
+        // return "hmmwv/tire/HMMWV_FialaTire.json";
         return "hmmwv/tire/HMMWV_TMeasyTire.json";
-        //return "hmmwv/tire/HMMWV_TMsimpleTire.json";
-        //return "hmmwv/tire/HMMWV_Pac89Tire.json";
+        // return "hmmwv/tire/HMMWV_TMsimpleTire.json";
+        // return "hmmwv/tire/HMMWV_Pac89Tire.json";
         // return "hmmwv/tire/HMMWV_Pac02Tire.json";
     }
     virtual std::string EngineJSON() const override {
@@ -187,6 +187,18 @@ namespace Output {
         QUERY_POINT_Y_RR,
         QUERY_POINT_Z_RR,
         SIM_TIME,
+        TIRE_MOMENT_X_FL,
+        TIRE_MOMENT_Y_FL,
+        TIRE_MOMENT_Z_FL,
+        TIRE_MOMENT_X_FR,
+        TIRE_MOMENT_Y_FR,
+        TIRE_MOMENT_Z_FR,
+        TIRE_MOMENT_X_RL,
+        TIRE_MOMENT_Y_RL,
+        TIRE_MOMENT_Z_RL,
+        TIRE_MOMENT_X_RR,
+        TIRE_MOMENT_Y_RR,
+        TIRE_MOMENT_Z_RR,
         LENGTH
     };
 }
@@ -233,24 +245,24 @@ class CH_VEHICLE_API SimulationInterface {
   ~SimulationInterface();
   void Step(const double input[Input::LENGTH], double output[Output::LENGTH]);
 
-  std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> SimulationInterface::GetVis() {
+  std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> GetVis() {
     return vis_;
   }
 
-  void SimulationInterface::SetVis(std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> vis) {
+  void SetVis(std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> vis) {
     vis_ = vis;
     vis_->AttachVehicle(car_);
   }
 
-  std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> SimulationInterface::GetDriver() {
+  std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> GetDriver() {
     return driver_;
   }
 
-  void SimulationInterface::SetDriver(std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver) {
+  void SetDriver(std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver) {
     driver_ = driver;
   }
 
-  double SimulationInterface::GetSimTime();
+  double GetSimTime();
 
   double GetStepSize() {
     return step_size_;
@@ -258,6 +270,7 @@ class CH_VEHICLE_API SimulationInterface {
 
  private:
   const double step_size_ = 2e-3;
+  const double tire_step_size_ = 1e-4;
   chrono::vehicle::WheeledVehicleForce* car_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> vis_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver_ = nullptr;

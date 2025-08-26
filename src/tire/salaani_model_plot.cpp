@@ -5,6 +5,8 @@
 #include <fstream>
 #include <iomanip>
 
+namespace tire {
+
 // Structure to hold tire parameters (based on Appendix B data)
 struct TireParameters {
     // Tire lateral stiffness parameters (Equation 26)
@@ -707,7 +709,9 @@ void demonstrateTireModel() {
     }
 }
 
+} // namespace tire
+
 int main() {
-    demonstrateTireModel();
+    tire::demonstrateTireModel();
     return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef RACK_PINIONFORCE_H
 #define RACK_PINIONFORCE_H
 
+namespace tire {
+
 // Structure to hold tire parameters (based on Appendix B data)
 struct TireParameters {
   // Tire lateral stiffness parameters (Equation 26)
@@ -329,7 +331,9 @@ namespace TireData {
     .plysteer = 3.714581147e-4
   };
   
-  }
+  } // namespace TireData
+
+} // namespace tire
 
 
 #endif
