@@ -3,13 +3,16 @@
   "Type": "Tire",
   "Template": "SalaaniTire",
 
-  // "Unloaded Radius [m]": 0.3266,
+  "Unloaded Radius [m]": 0.3266,
   "Rim Radius [m]": 0.2286,
   "Aspect Ratio [%]": 70,
   "Maximum Load [kg]": 545,
   "Width [m]": 0.255,
   "Mass [kg]": 11.5,
   "Inertia [kg.m2]": [0.156, 0.679, 0.156],
+  "Vertical Stiffness": 326332.4234,  // From Sedan_Pac89Tire.json.
+  "Vertical Damping": 3483.932502,    // From Sedan_Pac89Tire.json.
+  "Enable Lateral Relaxation": true,
 
   "SalaaniCoeffs": {
     "lateral_stiffness": {
@@ -29,8 +32,8 @@
       "mu_p0_lat": 1.208943826166
     },
     "longitudinal_peak_friction": {
-      "eta0_long": 0.0,
-      "eta1_long": -0.01439837983,
+      "eta1_long": 0.0,
+      "eta2_long": -0.01439837983,
       "mu_p0_long": 1.243813670770,
       "FZ0": 400.4967669
     },
@@ -67,6 +70,10 @@
       "Cz_contact": 2043.428888,
       "beta": 0.717385585628,
       "plysteer": -0.0001788346665
+    },
+    "validation_range": {
+      "MUNTEST": 0.85,
+      "FzMax": 1600.0
     }
   },
 
@@ -76,8 +83,9 @@
   },
 
   "SpeedBasedTireModelBlending": {
-    "Friction Blend Begin [m/s]": 0.0,
-    "Friction Blend End [m/s]": 0.0
+    "Enable": false,
+    "Friction Blend Begin [m/s]": 1.0,
+    "Friction Blend End [m/s]": 3.0
   },
 
   "TimeBasedTireModelBlending": {

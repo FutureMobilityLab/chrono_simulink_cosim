@@ -10,6 +10,9 @@
   "Width [m]": 0.265,
   "Mass [kg]": 15.2,
   "Inertia [kg.m2]": [0.235, 0.942, 0.235],
+  "Vertical Stiffness": 2000000.0,
+  "Vertical Damping": 35000.0,
+  "Enable Lateral Relaxation": true,
 
   "SalaaniCoeffs": {
     "lateral_stiffness": {
@@ -29,8 +32,8 @@
       "mu_p0_lat": 1.1328139729802
     },
     "longitudinal_peak_friction": {
-      "eta0_long": 0.033127840588,
-      "eta1_long": -0.122260930831,
+      "eta1_long": 0.033127840588,
+      "eta2_long": -0.122260930831,
       "mu_p0_long": 1.2134062679177,
       "FZ0": 600.55968210
     },
@@ -67,17 +70,22 @@
       "Cz_contact": 1544.432073,
       "beta": 2.118775049325,
       "plysteer": -0.00084908907595
+    },
+    "validation_range": {
+      "MUNTEST": 0.85,
+      "FzMax": 3001.0
     }
   },
 
   "DahlCoeffs": {
-    "sigma0": 10000.0,
-    "sigma1": 5000.0
+    "sigma0": 1000000.0,
+    "sigma1": 50000.0
   },
 
   "SpeedBasedTireModelBlending": {
-    "Friction Blend Begin [m/s]": 0.0,
-    "Friction Blend End [m/s]": 0.0
+    "Enable": false,
+    "Friction Blend Begin [m/s]": 1.0,
+    "Friction Blend End [m/s]": 3.0
   },
 
   "TimeBasedTireModelBlending": {
@@ -87,7 +95,9 @@
   },
 
   "Visualization": {
-    "Mesh Filename Left": "sedan_force/sedan_tire.obj",
-    "Mesh Filename Right": "sedan_force/sedan_tire.obj"
+    // "Mesh Filename Left": "sedan_force/sedan_tire.obj",
+    // "Mesh Filename Right": "sedan_force/sedan_tire.obj"
+    "Mesh Filename Left": "hmmwv/hmmwv_tire_left.obj",
+    "Mesh Filename Right": "hmmwv/hmmwv_tire_right.obj"
   }
 }
