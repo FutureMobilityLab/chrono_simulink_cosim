@@ -179,8 +179,10 @@ _sim_lib.DestroySimulationInterface.restype = ctypes.c_int  # Returns error code
 # Step(simulation_interface::SimulationInterface* obj, const double input[], double output[])
 _sim_lib.Step.argtypes = [
     ctypes.c_void_p,
-    C_DOUBLE_ARRAY_INPUT,
-    C_DOUBLE_ARRAY_OUTPUT,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
+    ctypes.POINTER(ctypes.c_double),
+    ctypes.c_size_t,
 ]
 _sim_lib.Step.restype = ctypes.c_int  # Returns error code
 
@@ -228,9 +230,29 @@ class SimulationInterface:
         """
         Destroys the underlying C++ SimulationInterface object when the Python object is garbage collected.
         """
-        if hasattr(self, "_obj_ptr") and self._obj_ptr:
-            _sim_lib.DestroySimulationInterface(self._obj_ptr)
+        try:
+            if getattr(self, "_obj_ptr", None):
+                # During interpreter shutdown module globals may be cleared; guard access.
+                if "_sim_lib" in globals() and _sim_lib is not None:
+                    _sim_lib.DestroySimulationInterface(self._obj_ptr)
+        except Exception:
+            # Suppress exceptions during finalization
+            pass
+        finally:
             self._obj_ptr = None
+
+    def close(self):
+        """Explicitly destroy the underlying C++ object. Safe to call multiple times."""
+        if getattr(self, "_obj_ptr", None):
+            if "_sim_lib" in globals() and _sim_lib is not None:
+                _sim_lib.DestroySimulationInterface(self._obj_ptr)
+        self._obj_ptr = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
 
     def get_step_size(self):
         """
@@ -248,7 +270,7 @@ class SimulationInterface:
 
         return step_size_out.value
 
-    def step(self, input: Union[pd.DataFrame, pd.Series, npt.NDArray]) -> npt.NDArray:
+    def step(self, input_copy: Union[pd.DataFrame, pd.Series, npt.NDArray]) -> npt.NDArray:
         """
         Performs a simulation step.
 
@@ -260,6 +282,7 @@ class SimulationInterface:
             pd.DataFrame: A pandas DataFrame with a single row,
                           its columns corresponding to the Output constants.
         """
+        input = input_copy.copy()
         if isinstance(input, pd.DataFrame) or isinstance(input, pd.Series):
             input_np = input.to_numpy(dtype=np.float64)
         elif isinstance(input, np.ndarray):
@@ -288,7 +311,13 @@ class SimulationInterface:
         c_output = C_DOUBLE_ARRAY_OUTPUT()
 
         # Call the C API step function and check the error code
-        result_code = _sim_lib.Step(self._obj_ptr, c_input, c_output)
+        result_code = _sim_lib.Step(
+            self._obj_ptr,
+            c_input,
+            ctypes.c_size_t(Input.LENGTH),
+            c_output,
+            ctypes.c_size_t(Output.LENGTH),
+        )
         if result_code != ErrorCode.OK:
             raise RuntimeError(f"Step failed with C API error code: {result_code}")
 

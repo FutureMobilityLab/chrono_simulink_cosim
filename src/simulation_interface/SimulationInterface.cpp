@@ -10,6 +10,8 @@
 #include "chrono_vehicle/ChPowertrainAssembly.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono/utils/ChConstants.h"
+#include "chrono_vehicle/wheeled_vehicle/steering/RackPinion.h"
 
 #include <filesystem>
 #include <iostream>
@@ -153,9 +155,13 @@ SimulationInterface::SimulationInterface(
   const char* vehicle_model_name
 ) {
   if (std::strcmp(vehicle_model_name, "sedan") == 0) {
-    vehicle_model_ = new simulation_interface::Sedan_Model();
+    // vehicle_model_ = new simulation_interface::Sedan_Model();
+    vehicle_json_ = "sedan_force/vehicle/Sedan_Vehicle.json";
   } else if (std::strcmp(vehicle_model_name, "hmmwv") == 0) {
-    vehicle_model_ = new simulation_interface::HMMWV_Model();
+    // vehicle_model_ = new simulation_interface::HMMWV_Model();
+    vehicle_json_ = "hmmwv/vehicle/HMMWV_Vehicle_Force.json";
+  } else if (std::strcmp(vehicle_model_name, "ford_expedition_2003") == 0) {
+    vehicle_json_ = "ford_expedition_2003/Vehicle_ford_expedition_2003.json";
   } else {
     std::cerr << "Vehicle model name: " << vehicle_model_name 
               << " not supported. Check for typos.";
@@ -163,11 +169,15 @@ SimulationInterface::SimulationInterface(
   }
 
   chrono::vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
+  // const std::string data_file = chrono::vehicle::GetDataFile(
+  //     vehicle_model_->VehicleJSON());
   const std::string data_file = chrono::vehicle::GetDataFile(
-      vehicle_model_->VehicleJSON());
+      vehicle_json_);
   car_ = new chrono::vehicle::WheeledVehicleForce(
     data_file,
-    vehicle_model_->ContactMethod());
+    chrono::ChContactMethod::SMC,
+    true,
+    true);
 
   const auto system = car_->GetSystem();
   // system->SetSolverType(chrono::ChSolver::Type::PMINRES);
@@ -231,25 +241,25 @@ SimulationInterface::SimulationInterface(
   car_->SetSteeringVisualizationType(chrono::vehicle::VisualizationType::PRIMITIVES);
   car_->SetWheelVisualizationType(chrono::vehicle::VisualizationType::MESH);
   
-  const auto engine = chrono::vehicle::ReadEngineJSON(
-    chrono::vehicle::GetDataFile(vehicle_model_->EngineJSON()));
-  const auto transmission = chrono::vehicle::ReadTransmissionJSON(
-    chrono::vehicle::GetDataFile(vehicle_model_->TransmissionJSON()));
-  const auto powertrain = chrono_types::make_shared<chrono::vehicle::ChPowertrainAssembly>(engine, transmission);
-  car_->InitializePowertrain(powertrain);
+  // const auto engine = chrono::vehicle::ReadEngineJSON(
+  //   chrono::vehicle::GetDataFile(vehicle_model_->EngineJSON()));
+  // const auto transmission = chrono::vehicle::ReadTransmissionJSON(
+  //   chrono::vehicle::GetDataFile(vehicle_model_->TransmissionJSON()));
+  // const auto powertrain = chrono_types::make_shared<chrono::vehicle::ChPowertrainAssembly>(engine, transmission);
+  // car_->InitializePowertrain(powertrain);
   // car_.LockAxleDifferential(0, false);
 
-  const auto tire_vis_type = chrono::vehicle::VisualizationType::MESH;
-  for (unsigned int i = 0; i < car_->GetNumberAxles(); i++)
-  {
-    for (auto &wheel : car_->GetAxle(i)->GetWheels())
-    {
-      auto tire = chrono::vehicle::ReadCustomTireJSON(
-          chrono::vehicle::GetDataFile(vehicle_model_->TireJSON(i)));
-      car_->InitializeTire(tire, wheel, tire_vis_type);
-      tire->SetStepsize(tire_step_size_);
-    }
-  }
+  // const auto tire_vis_type = chrono::vehicle::VisualizationType::MESH;
+  // for (unsigned int i = 0; i < car_->GetNumberAxles(); i++)
+  // {
+  //   for (auto &wheel : car_->GetAxle(i)->GetWheels())
+  //   {
+  //     auto tire = chrono::vehicle::ReadCustomTireJSON(
+  //         chrono::vehicle::GetDataFile(vehicle_model_->TireJSON(i)));
+  //     car_->InitializeTire(tire, wheel, tire_vis_type);
+  //     tire->SetStepsize(tire_step_size_);
+  //   }
+  // }
 
   system->SetCollisionSystemType(chrono::ChCollisionSystem::Type::BULLET);
 
@@ -278,10 +288,10 @@ SimulationInterface::~SimulationInterface() {
   //   terrain_ = nullptr;
   // }
 
-  if (vehicle_model_) {
-    delete vehicle_model_;
-    vehicle_model_ = nullptr;
-  }
+  // if (vehicle_model_) {
+  //   delete vehicle_model_;
+  //   vehicle_model_ = nullptr;
+  // }
 }
 
 void SimulationInterface::Step(const double input[Input::LENGTH], double output[Output::LENGTH]) {
@@ -301,6 +311,15 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
     
     vis_->EndScene();
   }
+
+  // // Make a copy of input using memcpy (memset is for zeroing memory, memcpy copies)
+  // double input[Input::LENGTH];
+  // std::memset(input, 0, sizeof(double) * Input::LENGTH);
+  // std::memcpy(input, input_copy, sizeof(double) * Input::LENGTH);
+  // for (size_t i = 0; i < Input::LENGTH; ++i) {
+  //   std::cout << "[" << i << "]: " << input[i] << " ";
+  // }
+  // std::cout << "\n";
 
   // Process terrain input parameters
   // Process heights
@@ -335,13 +354,26 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
 
   chrono::vehicle::DriverInputs driver_inputs;
   if (driver_) {
-      driver_inputs = driver_->GetInputs();
-      driver_->Synchronize(time);
-      driver_->Advance(step_size_);
-    } else {
-      driver_inputs.m_steering = input[Input::STEERING];
-      driver_inputs.m_throttle = input[Input::THROTTLE];
-      driver_inputs.m_braking = input[Input::BRAKE];
+    driver_inputs = driver_->GetInputs();
+    driver_->Synchronize(time);
+    driver_->Advance(step_size_);
+  } else {
+    driver_inputs.m_steering = input[Input::STEERING];
+    driver_inputs.m_throttle = input[Input::THROTTLE];
+    driver_inputs.m_braking = input[Input::BRAKE];
+  }
+
+  auto steering = car_->GetSteering(0);
+  if (auto steering_rp = std::dynamic_pointer_cast<chrono::vehicle::RackPinion>(steering)) {
+    // If input looks like an absolute pinion angle (abs > 1), scale it to the
+    // normalized [-1,1] steering command expected by ChRackPinion using GetMaxAngle().
+    double max_ang = steering_rp->GetMaxAngle();
+    driver_inputs.m_steering = driver_inputs.m_steering / max_ang;
+    // Clamp to [-1,1].
+    if (driver_inputs.m_steering > 1.0)
+      driver_inputs.m_steering = 1.0;
+    else if (driver_inputs.m_steering < -1.0)
+      driver_inputs.m_steering = -1.0;
   }
 
   car_->Synchronize(time, driver_inputs, *terrain_);
@@ -476,16 +508,16 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   // Road wheels steer angle (angle made between wheel normal axis and chassis y plane).
   const auto wheel_normal_fl = car_->GetWheel(0,chrono::vehicle::VehicleSide::LEFT)->GetState().rot.GetAxisY();
   const auto normal_fl = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_fl);
-  output[Output::WHEEL_STEER_ANG_FL] = std::atan2(normal_fl.x(), normal_fl.y());
+  // output[Output::WHEEL_STEER_ANG_FL] = std::atan2(normal_fl.x(), normal_fl.y());
   const auto wheel_normal_fr = car_->GetWheel(0,chrono::vehicle::VehicleSide::RIGHT)->GetState().rot.GetAxisY();
   const auto normal_fr = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_fr);
-  output[Output::WHEEL_STEER_ANG_FR] = std::atan2(normal_fr.x(), normal_fr.y());
+  // output[Output::WHEEL_STEER_ANG_FR] = std::atan2(normal_fr.x(), normal_fr.y());
   const auto wheel_normal_rl = car_->GetWheel(1,chrono::vehicle::VehicleSide::LEFT)->GetState().rot.GetAxisY();
   const auto normal_rl = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_rl);
-  output[Output::WHEEL_STEER_ANG_RL] = std::atan2(normal_rl.x(),normal_rl.y());
+  // output[Output::WHEEL_STEER_ANG_RL] = std::atan2(normal_rl.x(),normal_rl.y());
   const auto wheel_normal_rr = car_->GetWheel(1,chrono::vehicle::VehicleSide::RIGHT)->GetState().rot.GetAxisY();
   const auto normal_rr = car_->GetChassis()->GetTransform().TransformDirectionParentToLocal(wheel_normal_rr);
-  output[Output::WHEEL_STEER_ANG_RR] = std::atan2(normal_rr.x(),normal_rr.y());
+  // output[Output::WHEEL_STEER_ANG_RR] = std::atan2(normal_rr.x(),normal_rr.y());
 
   // Add query points to output
   auto query_point = car_->GetWheel(0, chrono::vehicle::VehicleSide::LEFT)->GetState().pos;
@@ -513,8 +545,32 @@ void SimulationInterface::Step(const double input[Input::LENGTH], double output[
   // Validate output.
   for (size_t i = 0; i < Output::LENGTH; i++) {
     if (std::isnan(output[i])) {
+      std::cerr << "SimulationInterface::Step NaN detected at output[" << i
+                << "] at time " << time << std::endl;
       throw std::runtime_error("Got nan for output[" + std::to_string(i) + "].");
     }
+  }
+
+  // Verify vehicle has not rolled over.
+  if (std::abs(output[Output::CHASSIS_ORIENT_X]) > chrono::CH_PI_2) {
+    std::cerr << "Vehicle roll limit exceeded at time " << time
+              << " roll=" << output[Output::CHASSIS_ORIENT_X] << std::endl;
+    throw std::runtime_error("Vehicle rolled over with roll = " + std::to_string(output[Output::CHASSIS_ORIENT_X]) + " (axis-x).");
+  }
+  if (std::abs(output[Output::CHASSIS_ORIENT_Y]) > chrono::CH_PI_2) {
+    std::cerr << "Vehicle pitch limit exceeded at time " << time
+              << " pitch=" << output[Output::CHASSIS_ORIENT_Y] << std::endl;
+    throw std::runtime_error("Vehicle rolled over with pitch = " + std::to_string(output[Output::CHASSIS_ORIENT_Y]) + " (axis-y).");
+  }
+
+  // Verify vehicle did not fall through ground.
+  const double min_height = std::min({input[Input::TERRAIN_HEIGHT_FL], input[Input::TERRAIN_HEIGHT_FR],
+                                        input[Input::TERRAIN_HEIGHT_RL], input[Input::TERRAIN_HEIGHT_RR]});
+  if (output[Output::CHASSIS_POS_Z] <  min_height - 0.5) {
+    std::cerr << "Vehicle below terrain at time " << time
+              << " chassis_z=" << output[Output::CHASSIS_POS_Z]
+              << " min_height=" << min_height << std::endl;
+    throw std::runtime_error("Vehicle fell through the ground.");
   }
 }
 

@@ -4,11 +4,13 @@
 // custom force-based actuator classes created in this project.
 
 #include "src/vehicle/WheeledVehicleForce.h"
-#include "src/utils/utils.cpp"
+#include "src/utils/utils.h"
+#include "src/steering/ChRackPinionForce.h"
 
 #include "chrono_vehicle/ChPowertrainAssembly.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/wheeled_vehicle/steering/RackPinion.h"
 
 #include <iostream>
 
@@ -198,6 +200,7 @@ namespace chrono::vehicle
     // ------------------------------------
     // Create the powertrain (if specified)
     // ------------------------------------
+    std::cout << "Creating powertrain\n";
 
     if (create_powertrain && d.HasMember("Powertrain"))
     {
@@ -214,6 +217,7 @@ namespace chrono::vehicle
     // --------------------
     // Create the driveline
     // --------------------
+    std::cout << "Creating driveline\n";
 
     if (d.HasMember("Driveline"))
     {
@@ -320,7 +324,8 @@ namespace chrono::vehicle
         file_name = d["Axles"][i]["Tire Input File"].GetString();
         for (auto &wheel : m_axles[i]->GetWheels())
         {
-          wheel->SetTire(ReadTireJSON(vehicle::GetDataFile(file_name)));
+          std::cout << "Creating tire for wheel\n";
+          wheel->SetTire(ReadCustomTireJSON(vehicle::GetDataFile(file_name)));
         }
       }
 
@@ -443,10 +448,34 @@ namespace chrono::vehicle
   double WheeledVehicleForce::GetPinionAngle() {
     std::shared_ptr<ChSteering> steering = GetSteering(0);
     
-    auto rack = std::dynamic_pointer_cast<ChRackPinionForce>(steering);
-    if (rack) {
-      return rack->GetPinionAngle();
-    }
-    throw std::runtime_error("Invalid steering subsystem type.");
+  // First try the force-based custom steering implementation.
+  if (auto rackf = std::dynamic_pointer_cast<ChRackPinionForce>(steering)) {
+    return rackf->GetPinionAngle();
+  }
+
+  // If not present, try the standard Chrono RackPinion steering.
+  if (auto rack = std::dynamic_pointer_cast<chrono::vehicle::RackPinion>(steering)) {
+    // Compute pinion angle from current rack displacement:
+    // displacement = current_local_y - GetSteeringLinkCOM()
+    // angle = displacement / GetPinionRadius()
+    auto link = steering->GetSteeringLink();
+    auto link_pos = link->GetPos();  // absolute position
+    // steering frame in absolute coords = chassis transform * steering rel transform
+    auto chassis_xform = m_chassis->GetTransform();
+    ChFrame<> steering_to_abs = chassis_xform;
+    steering_to_abs.ConcatenatePreTransformation(steering->GetRelTransform());
+    chrono::ChVector3d local = steering_to_abs.TransformPointParentToLocal(link_pos);
+    double displacement = local.y() - rack->GetSteeringLinkCOM();
+    double angle = displacement / rack->GetPinionRadius();
+    // Clamp to valid pinion range to avoid extreme initial displacements.
+    double max_ang = rack->GetMaxAngle();
+    if (angle > max_ang)
+      angle = max_ang;
+    else if (angle < -max_ang)
+      angle = -max_ang;
+    return angle;
+  }
+
+  throw std::runtime_error("Invalid steering subsystem type. Expected RackPinionForce or RackPinion.");
   }
 } // end namespace chrono::vehicle

@@ -39,7 +39,7 @@ CH_VEHICLE_API int CreateSimulationInterface(const char* config_file, simulation
 // Assuming SimulationInterface has a static method or global constant GetDefaultStepSize()
 CH_VEHICLE_API int GetStepSize(simulation_interface::SimulationInterface* obj, double* step_size_out) {
   if (obj == nullptr) {
-    std::cerr << "C API Error (Step): Received null SimulationInterface object." << std::endl;
+    std::cerr << "C API Error (GetStepSize): Received null SimulationInterface object." << std::endl;
     return SIM_API_ERROR_NULL_POINTER; // Return specific error code
   }
   if (step_size_out == nullptr) {
@@ -81,10 +81,12 @@ CH_VEHICLE_API int DestroySimulationInterface(simulation_interface::SimulationIn
 }
 
 // Call the step method
-CH_VEHICLE_API int Step( // Changed return type to int
-    simulation_interface::SimulationInterface* obj, 
-    const double input[simulation_interface::Input::LENGTH], 
-    double output[simulation_interface::Output::LENGTH]
+CH_VEHICLE_API int Step(
+    simulation_interface::SimulationInterface* obj,
+    const double* input,
+    std::size_t input_len,
+    double* output,
+    std::size_t output_len
 ) {
   if (obj == nullptr) {
     std::cerr << "C API Error (Step): Received null SimulationInterface object." << std::endl;
@@ -96,8 +98,31 @@ CH_VEHICLE_API int Step( // Changed return type to int
     return SIM_API_ERROR_NULL_POINTER;
   }
 
+  // Validate lengths passed by the caller to avoid out-of-bounds reads/writes
+  if (input_len != simulation_interface::Input::LENGTH || output_len != simulation_interface::Output::LENGTH) {
+    std::cerr << "C API Error (Step): Invalid input/output length. Expected input_len="
+              << simulation_interface::Input::LENGTH << ", output_len=" << simulation_interface::Output::LENGTH
+              << ", got input_len=" << input_len << ", output_len=" << output_len << std::endl;
+    return SIM_API_ERROR_INVALID_ARGUMENT;
+  }
+
   try {
-    obj->Step(input, output); // Call the actual C++ method
+    // Copy the incoming input array into a local buffer. When called from
+    // foreign runtimes (Python/ctypes, Julia, etc.) the caller's buffer may
+    // have different alignment, layout, or a lifetime shorter than the
+    // callee expects. Copying here ensures a stable, properly-aligned C
+    // array is passed into the C++ implementation.
+    double local_input[simulation_interface::Input::LENGTH];
+    std::memcpy(local_input, input, sizeof(double) * simulation_interface::Input::LENGTH);
+
+    // Initialize output to a known state to avoid propagating uninitialized
+    // garbage in case the implementation reads or validates output before
+    // fully writing it.
+    for (size_t i = 0; i < simulation_interface::Output::LENGTH; ++i) {
+      output[i] = 0.0;
+    }
+
+    obj->Step(local_input, output); // Call the actual C++ method with safe copy
     return SIM_API_OK; // Return success code
   } catch (const std::exception& e) {
     std::cerr << "C API Error (Step): C++ exception caught during step: " << e.what() << std::endl;
@@ -129,5 +154,39 @@ CH_VEHICLE_API int GetSimulationTime(simulation_interface::SimulationInterface* 
     }
 }
 
+
+CH_VEHICLE_API int SetChronoDataPath(const char* path) {
+    if (path == nullptr || std::strlen(path) == 0) {
+        std::cerr << "C API Error (SetChronoDataPath): Path is null or empty." << std::endl;
+        return SIM_API_ERROR_INVALID_ARGUMENT;
+    }
+    try {
+        chrono::SetChronoDataPath(path);
+        return SIM_API_OK;
+    } catch (const std::exception& e) {
+        std::cerr << "C API Error (SetChronoDataPath): C++ exception caught: " << e.what() << std::endl;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    } catch (...) {
+        std::cerr << "C API Error (SetChronoDataPath): Unknown C++ exception caught." << std::endl;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    }
+}
+
+CH_VEHICLE_API int SetVehicleDataPath(const char* path) {
+    if (path == nullptr || std::strlen(path) == 0) {
+        std::cerr << "C API Error (SetVehicleDataPath): Path is null or empty." << std::endl;
+        return SIM_API_ERROR_INVALID_ARGUMENT;
+    }
+    try {
+        chrono::vehicle::SetDataPath(path);
+        return SIM_API_OK;
+    } catch (const std::exception& e) {
+        std::cerr << "C API Error (SetVehicleDataPath): C++ exception caught: " << e.what() << std::endl;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    } catch (...) {
+        std::cerr << "C API Error (SetVehicleDataPath): Unknown C++ exception caught." << std::endl;
+        return SIM_API_ERROR_INTERNAL_FAILURE;
+    }
+}
 
 } // extern "C"

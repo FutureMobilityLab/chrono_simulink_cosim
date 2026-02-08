@@ -29,35 +29,45 @@
 namespace simulation_interface {
 
 // =============================================================================
+/*
 class Vehicle_Model {
   public:
     virtual std::string ModelName() const = 0;
     virtual std::string VehicleJSON() const = 0;
-    virtual std::string TireJSON(unsigned int axle) const = 0;
-    virtual std::string EngineJSON() const = 0;
-    virtual std::string TransmissionJSON() const = 0;
+    // virtual std::string TireJSON(unsigned int axle) const = 0;
+    // virtual std::string EngineJSON() const = 0;
+    // virtual std::string TransmissionJSON() const = 0;
     virtual double CameraDistance() const = 0;
     virtual chrono::ChContactMethod ContactMethod() const = 0;
+    // void PrintInfo() const {
+    //   std::cout << "Vehicle Model: " << ModelName() << std::endl;
+    //   std::cout << "  Vehicle JSON: " << VehicleJSON() << std::endl;
+    //   std::cout << "  Tire JSON (axle 0): " << TireJSON(0) << std::endl;
+    //   std::cout << "  Tire JSON (axle 1): " << TireJSON(1) << std::endl;
+    //   std::cout << "  Engine JSON: " << EngineJSON() << std::endl;
+    //   std::cout << "  Transmission JSON: " << TransmissionJSON() << std::endl;
+    // }
 };
 
 class Sedan_Model : public Vehicle_Model {
   public:
     virtual std::string ModelName() const override { return "Sedan"; }
     virtual std::string VehicleJSON() const override { return "sedan_force/vehicle/Sedan_Vehicle.json"; }
-    virtual std::string TireJSON(unsigned int axle) const override {
-        // return "sedan_force/tire/Sedan_RigidTire.json";
-        // return "sedan_force/tire/Sedan_TMeasyTire.json";
-        // return "sedan_force/tire/Sedan_Pac02Tire.json";
-        return "sedan_force/tire/bridgestone_P255_35R18.json";
-    }
-    virtual std::string EngineJSON() const override {
-        //return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";
-        return "sedan_force/powertrain/Sedan_EngineShafts.json";
-    }
-    virtual std::string TransmissionJSON() const override {
-        return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
-        // return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
-    }
+    // virtual std::string TireJSON(unsigned int axle) const override {
+    //     // return "sedan_force/tire/Sedan_RigidTire.json";
+    //     // return "sedan_force/tire/Sedan_TMeasyTire.json";
+    //     // return "sedan_force/tire/Sedan_Pac02Tire.json";
+    //     return "sedan_force/tire/bridgestone_P255_35R18.json";
+    //     // return "sedan_force/tire/continental_P265_70R17.json";
+    // }
+    // virtual std::string EngineJSON() const override {
+    //     //return "sedan_force/powertrain/Sedan_EngineSimpleMap.json";
+    //     return "sedan_force/powertrain/Sedan_EngineShafts.json";
+    // }
+    // virtual std::string TransmissionJSON() const override {
+    //     return "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json";
+    //     // return "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json";
+    // }
     virtual double CameraDistance() const override { return 6.0; }
     virtual chrono::ChContactMethod ContactMethod() const override { return chrono::ChContactMethod::SMC; }
 };
@@ -68,27 +78,27 @@ class HMMWV_Model : public Vehicle_Model {
   public:
     virtual std::string ModelName() const override { return "HMMWV"; }
     virtual std::string VehicleJSON() const override { return "hmmwv/vehicle/HMMWV_Vehicle_Force.json"; }
-    virtual std::string TireJSON(unsigned int axle) const override {
-        //return "hmmwv/tire/HMMWV_RigidTire.json";
-        // return "hmmwv/tire/HMMWV_FialaTire.json";
-        return "hmmwv/tire/HMMWV_TMeasyTire.json";
-        // return "hmmwv/tire/HMMWV_TMsimpleTire.json";
-        // return "hmmwv/tire/HMMWV_Pac89Tire.json";
-        // return "hmmwv/tire/HMMWV_Pac02Tire.json";
-    }
-    virtual std::string EngineJSON() const override {
-        return "hmmwv/powertrain/HMMWV_EngineShafts.json";
-        //return "hmmwv/powertrain/HMMWV_EngineSimpleMap.json";
-        //return "hmmwv/powertrain/HMMWV_EngineSimple.json";
-    }
-    virtual std::string TransmissionJSON() const override {
-        return "hmmwv/powertrain/HMMWV_AutomaticTransmissionShafts.json";
-        //return "hmmwv/powertrain/HMMWV_AutomaticTransmissionSimpleMap.json";
-    }
+    // virtual std::string TireJSON(unsigned int axle) const override {
+    //     //return "hmmwv/tire/HMMWV_RigidTire.json";
+    //     // return "hmmwv/tire/HMMWV_FialaTire.json";
+    //     return "hmmwv/tire/HMMWV_TMeasyTire.json";
+    //     // return "hmmwv/tire/HMMWV_TMsimpleTire.json";
+    //     // return "hmmwv/tire/HMMWV_Pac89Tire.json";
+    //     // return "hmmwv/tire/HMMWV_Pac02Tire.json";
+    // }
+    // virtual std::string EngineJSON() const override {
+    //     return "hmmwv/powertrain/HMMWV_EngineShafts.json";
+    //     //return "hmmwv/powertrain/HMMWV_EngineSimpleMap.json";
+    //     //return "hmmwv/powertrain/HMMWV_EngineSimple.json";
+    // }
+    // virtual std::string TransmissionJSON() const override {
+    //     return "hmmwv/powertrain/HMMWV_AutomaticTransmissionShafts.json";
+    //     //return "hmmwv/powertrain/HMMWV_AutomaticTransmissionSimpleMap.json";
+    // }
     virtual double CameraDistance() const override { return 6.0; }
     virtual chrono::ChContactMethod ContactMethod() const override { return chrono::ChContactMethod::SMC; }
 };
-
+*/
 namespace Input {
 enum {
   STEERING,
@@ -271,13 +281,14 @@ class CH_VEHICLE_API SimulationInterface {
 
  private:
   const double step_size_ = 2e-3;
-  const double tire_step_size_ = 1e-4;
+  const double tire_step_size_ = 2e-3;
   chrono::vehicle::WheeledVehicleForce* car_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht> vis_ = nullptr;
   std::shared_ptr<chrono::vehicle::ChInteractiveDriverIRR> driver_ = nullptr;
   std::shared_ptr<TerrainInterface> terrain_ = nullptr;
   // std::shared_ptr<chrono::vehicle::ChTerrain> terrain_ = nullptr;
-  Vehicle_Model* vehicle_model_ = nullptr;
+  // Vehicle_Model* vehicle_model_ = nullptr;
+  std::string vehicle_json_;
 
   // Wheel indices for convenient access
   static constexpr int FL = 0; // Front Left
