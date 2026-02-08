@@ -8,14 +8,29 @@
 #include <iomanip>
 #include <string>
 
+namespace {
+  // Test each tire
+  struct TireTest {
+    const char* name;
+    const tire::Params& params;
+  };
+
+  TireTest tires[] = {
+      {"Bridgestone P255/35R18", tire::TireData::bridgestone_255_35R18},
+      {"Bridgestone P225/40R18", tire::TireData::bridgestone_225_40R18},
+      {"Continental P265/70R17", tire::TireData::continental_265_70R17},
+      {"Goodyear P225/60R16", tire::TireData::goodyear_225_60R16}
+  };
+}
+
 namespace tire {
 
 // Helper function to calculate peak friction coefficients
-std::pair<double, double> calculatePeakFriction(const TireParameters& tire, double FZ) {
-  double MURATIO = tire.MUNOM / tire.MUNTEST;
+std::pair<double, double> calculatePeakFriction(const tire::Params& tire, double FZ) {
+  double MURATIO = 1.0;
   double FZ1 = (FZ < tire.FZ0) ? tire.FZ0 : FZ;
   
-  double MUXp = MURATIO * tire.mu_p0_long * std::pow(FZ1/tire.FZ0, tire.eta0_long + tire.eta1_long * std::log(FZ1/tire.FZ0));
+  double MUXp = MURATIO * tire.mu_p0_long * std::pow(FZ1/tire.FZ0, tire.eta2_long + tire.eta1_long * std::log(FZ1/tire.FZ0));
   
   double MUYp = MURATIO * tire.mu_p0_lat * std::pow(FZ1/tire.FZ0, tire.eta2_lat + tire.eta1_lat * std::log(FZ1/tire.FZ0));
   
@@ -23,7 +38,7 @@ std::pair<double, double> calculatePeakFriction(const TireParameters& tire, doub
 }
 
 // Helper function to calculate lateral stiffness C_alpha
-double calculateLateralStiffness(const TireParameters& tire, double FZ) {
+double calculateLateralStiffness(const tire::Params& tire, double FZ) {
   double CA = tire.Cam * (1.0 - std::exp(tire.C1 * std::pow(FZ/tire.FZCam, 2) + 
                                         tire.C2 * (FZ/tire.FZCam)));
   return CA;
@@ -67,21 +82,8 @@ void exportTireModelToCsv() {
   std::cout << "=== Salaani Tire Model CSV Export (By Tire Type and Sampled FZ) ===" << std::endl;
   std::cout << std::endl;
   
-  // Tire selection for detailed analysis
-  struct TireTest {
-      const char* name;
-      const TireParameters& params;
-  };
-  
-  TireTest tires[] = {
-      {"Bridgestone P255/35R18", TireData::bridgestone_255_35R18},
-      {"Bridgestone P225/40R18", TireData::bridgestone_225_40R18},
-      {"Continental P265/70R17", TireData::continental_265_70R17},
-      {"Goodyear P225/60R16", TireData::goodyear_225_60R16}
-  };
-  
   // Define the normal forces for sampling
-  std::vector<double> normal_forces_to_sample = {402.0, 802.0, 1202.0, 1602.0, 2001.0};
+  std::vector<double> normal_forces_to_sample = {402.0, 802.0, 1202.0, 1602.0, 2001.0, 6000.0};
   
   double camber_angle = 0.0;     // No camber
   
@@ -103,7 +105,7 @@ void exportTireModelToCsv() {
 
           std::vector<std::vector<double>> data;
           std::vector<double> slip_angles_deg;
-          for (double alpha_deg = -15.0; alpha_deg <= 15.0; alpha_deg += 0.5) {
+          for (double alpha_deg = -30.0; alpha_deg <= 30.0; alpha_deg += 0.5) {
               slip_angles_deg.push_back(alpha_deg);
           }
           data.push_back(slip_angles_deg); // First column is slip angle
@@ -112,8 +114,9 @@ void exportTireModelToCsv() {
               std::vector<double> fy_values;
               for (double alpha_deg : slip_angles_deg) {
                   double alpha_rad = alpha_deg * 3.14 / 180.0;
-                  TireForces forces = SalaaniTireModel::calculateTireForces(
-                      tire_test.params, alpha_rad, 0.0, camber_angle, fz_val);
+                  tire::SalaaniTireModel tire_model(tire_test.params);
+                  Forces forces = tire_model.calculateTireForces(
+                      alpha_rad, 0.0, camber_angle, fz_val);
                   fy_values.push_back(forces.FY);
               }
               data.push_back(fy_values); // Add FY data for this FZ
@@ -140,8 +143,9 @@ void exportTireModelToCsv() {
               std::vector<double> mz_values;
               for (double alpha_deg : slip_angles_deg) {
                   double alpha_rad = alpha_deg * 3.14 / 180.0;
-                  TireForces forces = SalaaniTireModel::calculateTireForces(
-                      tire_test.params, alpha_rad, 0.0, camber_angle, fz_val);
+                  tire::SalaaniTireModel tire_model(tire_test.params);
+                  Forces forces = tire_model.calculateTireForces(
+                      alpha_rad, 0.0, camber_angle, fz_val);
                   mz_values.push_back(forces.MZ);
               }
               data.push_back(mz_values); // Add MZ data for this FZ
@@ -160,8 +164,9 @@ void exportTireModelToCsv() {
           for (double current_fz : normal_forces_to_sample) {
               for (double alpha_deg = -15.0; alpha_deg <= 15.0; alpha_deg += 0.5) {
                   double alpha_rad = alpha_deg * 3.14 / 180.0;
-                  TireForces forces = SalaaniTireModel::calculateTireForces(
-                      tire_test.params, alpha_rad, 0.0, camber_angle, current_fz);
+                  tire::SalaaniTireModel tire_model(tire_test.params);
+                  Forces forces = tire_model.calculateTireForces(
+                      alpha_rad, 0.0, camber_angle, current_fz);
                   file << current_fz << "," << forces.FY << "," << forces.MZ << std::endl;
               }
           }
@@ -187,8 +192,9 @@ void exportTireModelToCsv() {
           for (double fz_val : normal_forces_to_sample) {
               std::vector<double> fx_values;
               for (double slip : slip_pct_values) { // Note: slip is percentage here, convert back to ratio for model
-                  TireForces forces = SalaaniTireModel::calculateTireForces(
-                      tire_test.params, 0.0, slip / 100.0, camber_angle, fz_val);
+                  tire::SalaaniTireModel tire_model(tire_test.params);
+                  Forces forces = tire_model.calculateTireForces(
+                      0.0, slip / 100.0, camber_angle, fz_val);
                   fx_values.push_back(forces.FX);
               }
               data.push_back(fx_values); // Add FX data for this FZ
@@ -203,16 +209,18 @@ void exportTireModelToCsv() {
           std::ofstream file(filename);
           file << header << std::endl;
 
-          for (double current_fz : normal_forces_to_sample) {
-              for (double alpha_deg = 0.0; alpha_deg <= 10.0; alpha_deg += 1.0) {
+        //   for (double current_fz : normal_forces_to_sample) {
+        double current_fz = 1005.0;
+              for (double alpha_deg = -8.0; alpha_deg <= 8.0; alpha_deg += 2.0) {
                   double alpha_rad = alpha_deg * 3.14 / 180.0;
-                  for (double slip = -0.6; slip <= 0.6; slip += 0.05) {
-                      TireForces forces = SalaaniTireModel::calculateTireForces(
-                          tire_test.params, alpha_rad, slip, camber_angle, current_fz);
+                  for (double slip = -0.9; slip <= 0.9; slip += 0.01) {
+                      tire::SalaaniTireModel tire_model(tire_test.params);
+                      Forces forces = tire_model.calculateTireForces(
+                          alpha_rad, slip, camber_angle, current_fz);
                       file << current_fz << "," << forces.FX << "," << forces.FY << std::endl;
                   }
               }
-          }
+        //   }
           file.close();
           std::cout << "Successfully generated " << filename << std::endl;
       }
@@ -220,28 +228,31 @@ void exportTireModelToCsv() {
       // 6. Lateral Force vs Longitudinal Slip (at fixed slip angles)
       {
           std::string filename = cleaned_tire_name + "_lateral_force_vs_longitudinal_slip.csv";
-          std::vector<double> slip_angles = {2.0, 4.0, 6.0}; // degrees
+          std::vector<double> slip_angles = {-6.0, -4.0, -2.0, 2.0, 4.0, 6.0}; // degrees
 
           std::string header = "Longitudinal_Slip_pct";
-          for (double fz_val : normal_forces_to_sample) {
+        //   for (double fz_val : normal_forces_to_sample) {
+        double fz_val = 1005.0;
               for (double alpha_deg : slip_angles) {
                   header += ",FY_FZ_" + std::to_string(static_cast<int>(fz_val)) + "_alpha_" + std::to_string(static_cast<int>(alpha_deg)) + "deg";
               }
-          }
+        //   }
           
           std::ofstream file(filename);
           file << header << std::endl;
 
           for (double slip = -0.8; slip <= 0.8; slip += 0.02) {
               file << slip * 100.0;
-              for (double current_fz : normal_forces_to_sample) {
+            //   for (double current_fz : normal_forces_to_sample) {
+            double current_fz = 1005.0;
                   for (double alpha_deg : slip_angles) {
                       double alpha_rad = alpha_deg * 3.14 / 180.0;
-                      TireForces forces = SalaaniTireModel::calculateTireForces(
-                          tire_test.params, alpha_rad, slip, camber_angle, current_fz);
+                      tire::SalaaniTireModel tire_model(tire_test.params);
+                      Forces forces = tire_model.calculateTireForces(
+                          alpha_rad, slip, camber_angle, current_fz);
                       file << "," << forces.FY;
                   }
-              }
+            //   }
               file << std::endl;
           }
           file.close();
@@ -256,7 +267,7 @@ void exportTireModelToCsv() {
           std::vector<std::vector<double>> data;
           data.resize(2); // For Normal_Load and MUXp
 
-          for (double fz : normal_forces_to_sample) {
+          for (double fz = 0.0; fz <= 1500.0; fz += 100) {
               data[0].push_back(fz);
               auto friction = calculatePeakFriction(tire_test.params, fz);
               data[1].push_back(friction.first); // Longitudinal peak friction
@@ -284,8 +295,9 @@ void exportTireModelToCsv() {
               for (double current_fz : normal_forces_to_sample) {
                   for (double alpha_deg : slip_angles) {
                       double alpha_rad = alpha_deg * 3.14 / 180.0;
-                      TireForces forces = SalaaniTireModel::calculateTireForces(
-                          tire_test.params, alpha_rad, slip, camber_angle, current_fz);
+                      tire::SalaaniTireModel tire_model(tire_test.params);
+                      Forces forces = tire_model.calculateTireForces(
+                          alpha_rad, slip, camber_angle, current_fz);
                       file << "," << forces.FX;
                   }
               }
@@ -321,7 +333,7 @@ void exportTireModelToCsv() {
           for (double fz : normal_forces_to_sample) {
               data[0].push_back(fz);
               double CA = calculateLateralStiffness(tire_test.params, fz);
-              data[1].push_back(CA);
+              data[1].push_back(CA / (180.0 / acos(-1.0))); // Convert from lbs/rad to lbs/deg
           }
           generateCSV(filename, header, data);
       }
@@ -335,8 +347,10 @@ void exportTireModelToCsv() {
   double verification_fz = normal_forces_to_sample[0]; // Use the first sampled FZ for verification summary
   
   for (const auto& tire_test : tires) {
-      TireForces result = SalaaniTireModel::calculateTireForces(
-          tire_test.params, test_alpha, test_slip, camber_angle, verification_fz);
+    try {
+      tire::SalaaniTireModel tire_model(tire_test.params);
+      Forces result = tire_model.calculateTireForces(
+          test_alpha, test_slip, camber_angle, verification_fz);
       
       std::cout << tire_test.name << ":" << std::endl;
       std::cout << "  FX = " << std::setw(8) << std::fixed << std::setprecision(1) << result.FX << " lbs" << std::endl;
@@ -344,6 +358,10 @@ void exportTireModelToCsv() {
       std::cout << "  MZ = " << std::setw(8) << std::fixed << std::setprecision(3) << result.MZ << " ft-lbs" << std::endl;
       std::cout << "  MX = " << std::setw(8) << std::fixed << std::setprecision(3) << result.MX << " ft-lbs" << std::endl;
       std::cout << std::endl;
+      } catch (const std::exception& e) {
+          std::cout << "  ERROR: " << e.what() << std::endl;
+          std::cout << std::endl;
+      }
   }
 }
 
@@ -365,30 +383,23 @@ void demonstrateTireModel() {
   std::cout << "  Normal Force: " << normal_force << " lbs" << std::endl;
   std::cout << std::endl;
   
-  // Test each tire
-  struct TireTest {
-      const char* name;
-      const TireParameters& params;
-  };
-  
-  TireTest tires[] = {
-      {"Bridgestone P255/35R18", TireData::bridgestone_255_35R18},
-      {"Bridgestone P225/40R18", TireData::bridgestone_225_40R18},
-      {"Continental P265/70R17", TireData::continental_265_70R17},
-      {"Goodyear P225/60R16", TireData::goodyear_225_60R16}
-  };
-  
   for (const auto& tire_test : tires) {
       std::cout << "=== " << tire_test.name << " ===" << std::endl;
-      
-      TireForces result = SalaaniTireModel::calculateTireForces(
-          tire_test.params, slip_angle, longitudinal_slip, camber_angle, normal_force);
-      
-      std::cout << "  Longitudinal Force (FX): " << result.FX << " lbs" << std::endl;
-      std::cout << "  Lateral Force (FY): " << result.FY << " lbs" << std::endl;
-      std::cout << "  Aligning Moment (MZ): " << result.MZ << " ft-lbs" << std::endl;
-      std::cout << "  Overturning Moment (MX): " << result.MX << " ft-lbs" << std::endl;
-      std::cout << std::endl;
+
+      try {
+          tire::SalaaniTireModel tire_model(tire_test.params);
+          Forces result = tire_model.calculateTireForces(
+              slip_angle, longitudinal_slip, camber_angle, normal_force);
+
+          std::cout << "  Longitudinal Force (FX): " << result.FX << " lbs" << std::endl;
+          std::cout << "  Lateral Force (FY): " << result.FY << " lbs" << std::endl;
+          std::cout << "  Aligning Moment (MZ): " << result.MZ << " ft-lbs" << std::endl;
+          std::cout << "  Overturning Moment (MX): " << result.MX << " ft-lbs" << std::endl;
+          std::cout << std::endl;
+      } catch (const std::exception& e) {
+          std::cout << "  ERROR: " << e.what() << std::endl;
+          std::cout << std::endl;
+      }
   }
 }
 

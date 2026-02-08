@@ -64,6 +64,20 @@ constexpr double FTLBF_TO_NM = 1.3558179483;
 
 // -----------------------------------------------------------------------------
 
+class SineOffsetFunction : public ChFunctionSine {
+  private:
+    double m_offset;
+  public:
+    SineOffsetFunction() : m_offset(0.0) {}
+    SineOffsetFunction(double offset, double ampl, double freq, double phase = 0)
+        : ChFunctionSine(ampl, freq, phase), m_offset(offset) {}
+    virtual ~SineOffsetFunction() {}
+    virtual double GetVal(double x) const override {
+        return ChFunctionSine::GetVal(x) + m_offset;
+    }
+    virtual SineOffsetFunction* Clone() const override { return new SineOffsetFunction(*this); }
+};
+
 // Contact formulation type (SMC or NSC)
 ChContactMethod contact_method = ChContactMethod::NSC;
 
@@ -93,89 +107,94 @@ int main() {
     auto wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
 
     std::shared_ptr<ChTire> tire;
-    // if (tire_type == TireType::ANCF_TOROIDAL) {
-    //     auto ancf_tire = chrono_types::make_shared<ANCFToroidalTire>("ANCFtoroidal tire");
-    //     ancf_tire->SetRimRadius(0.27);
-    //     ancf_tire->SetHeight(0.18);
-    //     ancf_tire->SetThickness(0.015);
-    //     ancf_tire->SetDivCircumference(40);
-    //     ancf_tire->SetDivWidth(8);
-    //     ancf_tire->SetPressure(320e3);
-    //     ancf_tire->SetAlpha(0.15);
-    //     if (terrain_type == TerrainType::SCM)
-    //         ancf_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
-    //     tire = ancf_tire;
-    // } else if (use_JSON) {
-    //     std::string tire_file;
-    //     switch (tire_type) {
-    //         case TireType::RIGID:
-    //             tire_file = "hmmwv/tire/HMMWV_RigidTire.json";
-    //             break;
-    //         case TireType::TMEASY:
-    //             tire_file = "hmmwv/tire/HMMWV_TMeasyTire.json";
-    //             break;
-    //         case TireType::FIALA:
-    //             tire_file = "hmmwv/tire/HMMWV_FialaTire.json";
-    //             break;
-    //         case TireType::PAC89:
-    //             tire_file = "hmmwv/tire/HMMWV_Pac89Tire.json";
-    //             break;
-    //         case TireType::PAC02:
-    //             tire_file = "hmmwv/tire/HMMWV_Pac02Tire.json";
-    //             break;
-    //         case TireType::ANCF4:
-    //             tire_file = "hmmwv/tire/HMMWV_ANCF4Tire_Lumped.json";
-    //             break;
-    //         case TireType::ANCF8:
-    //             tire_file = "hmmwv/tire/HMMWV_ANCF8Tire_Lumped.json";
-    //             break;
-    //         case TireType::REISSNER:
-    //             tire_file = "hmmwv/tire/HMMWV_ReissnerTire.json";
-    //             break;
-    //     }
-        // tire = ReadTireJSON(vehicle::GetDataFile(tire_file));
-    // } else {
-    //     switch (tire_type) {
-    //         case TireType::RIGID:
-    //             tire = chrono_types::make_shared<hmmwv::HMMWV_RigidTire>("Rigid tire");
-    //             break;
-    //         case TireType::TMEASY:
-    //             tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
-    //             break;
-    //         case TireType::FIALA:
-    //             tire = chrono_types::make_shared<hmmwv::HMMWV_FialaTire>("Fiala tire");
-    //             break;
-    //         case TireType::PAC89:
-    //             tire = chrono_types::make_shared<hmmwv::HMMWV_Pac89Tire>("Pac89 tire");
-    //             break;
-    //         case TireType::ANCF4: {
-    //             auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ANCFTire>(
-    //                 "ANCF tire", hmmwv::HMMWV_ANCFTire::ElementType::ANCF_4);
-    //             if (terrain_type == TerrainType::SCM)
-    //                 hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
-    //             tire = hmmwv_tire;
-    //             break;
-    //         }
-    //         case TireType::ANCF8: {
-    //             auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ANCFTire>(
-    //                 "ANCF tire", hmmwv::HMMWV_ANCFTire::ElementType::ANCF_8);
-    //             if (terrain_type == TerrainType::SCM)
-    //                 hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
-    //             tire = hmmwv_tire;
-    //             break;
-    //         }
-    //         case TireType::REISSNER: {
-    //             auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ReissnerTire>("Reissner tire");
-    //             if (terrain_type == TerrainType::SCM)
-    //                 hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
-    //             tire = hmmwv_tire;
-    //             break;
-    //         }
-    //     }
-    // }
+    /*
+    if (tire_type == TireType::ANCF_TOROIDAL) {
+        auto ancf_tire = chrono_types::make_shared<ANCFToroidalTire>("ANCFtoroidal tire");
+        ancf_tire->SetRimRadius(0.27);
+        ancf_tire->SetHeight(0.18);
+        ancf_tire->SetThickness(0.015);
+        ancf_tire->SetDivCircumference(40);
+        ancf_tire->SetDivWidth(8);
+        ancf_tire->SetPressure(320e3);
+        ancf_tire->SetAlpha(0.15);
+        if (terrain_type == TerrainType::SCM)
+            ancf_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
+        tire = ancf_tire;
+    } else if (use_JSON) {
+        std::string tire_file;
+        switch (tire_type) {
+            case TireType::RIGID:
+                tire_file = "hmmwv/tire/HMMWV_RigidTire.json";
+                break;
+            case TireType::TMEASY:
+                tire_file = "hmmwv/tire/HMMWV_TMeasyTire.json";
+                break;
+            case TireType::FIALA:
+                tire_file = "hmmwv/tire/HMMWV_FialaTire.json";
+                break;
+            case TireType::PAC89:
+                tire_file = "hmmwv/tire/HMMWV_Pac89Tire.json";
+                break;
+            case TireType::PAC02:
+                tire_file = "hmmwv/tire/HMMWV_Pac02Tire.json";
+                break;
+            case TireType::ANCF4:
+                tire_file = "hmmwv/tire/HMMWV_ANCF4Tire_Lumped.json";
+                break;
+            case TireType::ANCF8:
+                tire_file = "hmmwv/tire/HMMWV_ANCF8Tire_Lumped.json";
+                break;
+            case TireType::REISSNER:
+                tire_file = "hmmwv/tire/HMMWV_ReissnerTire.json";
+                break;
+        }
+        tire = ReadTireJSON(vehicle::GetDataFile(tire_file));
+    } else {
+        switch (tire_type) {
+            case TireType::RIGID:
+                tire = chrono_types::make_shared<hmmwv::HMMWV_RigidTire>("Rigid tire");
+                break;
+            case TireType::TMEASY:
+                tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
+                break;
+            case TireType::FIALA:
+                tire = chrono_types::make_shared<hmmwv::HMMWV_FialaTire>("Fiala tire");
+                break;
+            case TireType::PAC89:
+                tire = chrono_types::make_shared<hmmwv::HMMWV_Pac89Tire>("Pac89 tire");
+                break;
+            case TireType::ANCF4: {
+                auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ANCFTire>(
+                    "ANCF tire", hmmwv::HMMWV_ANCFTire::ElementType::ANCF_4);
+                if (terrain_type == TerrainType::SCM)
+                    hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
+                tire = hmmwv_tire;
+                break;
+            }
+            case TireType::ANCF8: {
+                auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ANCFTire>(
+                    "ANCF tire", hmmwv::HMMWV_ANCFTire::ElementType::ANCF_8);
+                if (terrain_type == TerrainType::SCM)
+                    hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
+                tire = hmmwv_tire;
+                break;
+            }
+            case TireType::REISSNER: {
+                auto hmmwv_tire = chrono_types::make_shared<hmmwv::HMMWV_ReissnerTire>("Reissner tire");
+                if (terrain_type == TerrainType::SCM)
+                    hmmwv_tire->SetContactSurfaceType(ChDeformableTire::ContactSurfaceType::TRIANGLE_MESH);
+                tire = hmmwv_tire;
+                break;
+            }
+        }
+    }
+    */
 
-    std::string tire_file = "sedan_force/tire/continental_P265_70R17.json";
-    // std::string tire_file = "sedan_force/tire/bridgestone_P255_35R18.json";
+    // This tire model works.
+    // const std::string tire_file = "sedan_force/tire/Sedan_Pac89Tire.json";
+    // These tire models do not work.
+    const std::string tire_file = "sedan_force/tire/continental_P265_70R17.json";
+    // const std::string tire_file = "sedan_force/tire/bridgestone_P255_35R18.json";
     tire = vehicle::ReadCustomTireJSON(chrono::vehicle::GetDataFile(tire_file));
 
     // Create system and set solver
@@ -209,6 +228,7 @@ int main() {
     }
 
     sys->SetCollisionSystemType(ChCollisionSystem::Type::BULLET);
+    // sys->SetCollisionSystemType(ChCollisionSystem::Type::MULTICORE);
 
     SetChronoSolver(*sys, solver_type, integrator_type);
 
@@ -216,7 +236,7 @@ int main() {
     ChTireTestRig rig(wheel, tire, sys);
 
     ////rig.SetGravitationalAcceleration(0);
-    rig.SetNormalLoad(3000 * LBF_TO_N);
+    rig.SetNormalLoad(934 * LBF_TO_N);
 
     ////rig.SetCamberAngle(+15 * CH_DEG_TO_RAD);
 
@@ -249,13 +269,15 @@ int main() {
     //   longitudinal speed: 0.2 m/s
     //   angular speed: 10 RPM
     //   slip angle: sinusoidal +- 5 deg with 5 s period
-    // rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunctionConst>(2.0));
-    // rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunctionConst>(10 * CH_RPM_TO_RAD_S));
-    // rig.SetSlipAngleFunction(chrono_types::make_shared<ChFunctionSine>(5 * CH_DEG_TO_RAD, 0.2));
-    rig.SetSlipAngleFunction(chrono_types::make_shared<ChFunctionSine>(30 * CH_DEG_TO_RAD, 0.1));
+    rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunctionConst>(1.0));
+    // rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunctionSine>(0.0 * CH_RPM_TO_RAD_S, 1.0));
+    rig.SetAngSpeedFunction(chrono_types::make_shared<SineOffsetFunction>(3.5, 10 * CH_RPM_TO_RAD_S, 0.1));
+    // rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunctionConst>(30.0 * CH_RPM_TO_RAD_S));
+    // rig.SetSlipAngleFunction(chrono_types::make_shared<ChFunctionSine>(0.1 * CH_DEG_TO_RAD, 0.2));
+    rig.SetSlipAngleFunction(chrono_types::make_shared<ChFunctionSine>(35 * CH_DEG_TO_RAD, 0.1));
 
     // Scenario: specified longitudinal slip (overrrides other definitons of motion functions)
-    rig.SetConstantLongitudinalSlip(0.0, 0.1);
+    // rig.SetConstantLongitudinalSlip(0.0, 0.1);
 
     // Initialize the tire test rig
     rig.SetTimeDelay(1.0);
@@ -331,7 +353,11 @@ int main() {
     csv_output << "time,long_slip,slip_angle,camber_angle,"
                << "force_x,force_y,force_z,"
                << "point_x,point_y,point_z,"
-               << "moment_x,moment_y,moment_z\n";
+               << "moment_x,moment_y,moment_z,"
+               << "tire_frame_pos_x,tire_frame_pos_y,tire_frame_pos_z,"
+               << "tire_frame_rot_x,tire_frame_rot_y,tire_frame_rot_z,"
+               << "angular_velocity_x,angular_velocity_y,angular_velocity_z,"
+               << "linear_velocity_x,linear_velocity_y,linear_velocity_z\n";
 
     while (vis->Run()) {
         double time = sys->GetChTime();
@@ -347,15 +373,18 @@ int main() {
         // Write data to CSV files
         double time_offset = 0;
         if (time > time_offset) {
-            // Get tire forces
-            auto tforce = rig.ReportTireForce();
-            
+            // Get tire forces in local coordinates
+            ChCoordsys<> tire_frame;
+            auto tforce = tire->ReportTireForceLocal(rig.GetTerrain().get(), tire_frame);
+
             // Write all data to single CSV file
+            auto tire_rot_angles = tire_frame.rot.GetCardanAnglesXYZ();
             csv_output << time << ","
                       << tire->GetLongitudinalSlip() << ","
                       << tire->GetSlipAngle() * CH_RAD_TO_DEG << ","
                       << tire->GetCamberAngle() * CH_RAD_TO_DEG << ","
                       << tforce.force.x() << ","
+                    //   << rig.GetDBP() << ","
                       << tforce.force.y() << ","
                       << tforce.force.z() << ","
                       << tforce.point.x() << ","
@@ -363,7 +392,22 @@ int main() {
                       << tforce.point.z() << ","
                       << tforce.moment.x() << ","
                       << tforce.moment.y() << ","
-                      << tforce.moment.z() << "\n";
+                    //   << tforce.moment.z() << "\n";
+                      << tforce.moment.z() << ","
+                      << tire_frame.pos.x() << ","
+                      << tire_frame.pos.y() << ","
+                      << tire_frame.pos.z() << ","
+                      << tire_rot_angles.x() * CH_RAD_TO_DEG << ","
+                      << tire_rot_angles.y() * CH_RAD_TO_DEG << ","
+                      << tire_rot_angles.z() * CH_RAD_TO_DEG << ","
+                      << wheel->GetSpindle()->GetAngVelLocal().x() << ","
+                      << wheel->GetSpindle()->GetAngVelLocal().y() << ","
+                      << wheel->GetSpindle()->GetAngVelLocal().z() << ","
+                      << wheel->GetSpindle()->GetLinVel().x() << ","
+                      << wheel->GetSpindle()->GetLinVel().y() << ","
+                      << wheel->GetSpindle()->GetLinVel().z() << "\n";
+
+            // std::cout << "SlipAngle: " << tire->GetSlipAngle() * CH_RAD_TO_DEG << std::endl;
 
             // Flush the file periodically to ensure data is written
             if (static_cast<int>(time * 100) % 100 == 0) {
@@ -392,9 +436,10 @@ int main() {
     std::cout << "File contains:" << std::endl;
     std::cout << "  - Time" << std::endl;
     std::cout << "  - Kinematics (longitudinal slip, slip angle, camber angle)" << std::endl;
-    std::cout << "  - Forces (x, y, z components)" << std::endl;
-    std::cout << "  - Points (x, y, z components)" << std::endl;
-    std::cout << "  - Moments (x, y, z components)" << std::endl;
+    std::cout << "  - Forces (x, y, z components in tire local ISO frame)" << std::endl;
+    std::cout << "  - Points (x, y, z components in global frame)" << std::endl;
+    std::cout << "  - Moments (x, y, z components in tire local ISO frame)" << std::endl;
+    std::cout << "  - Tire frame (position and orientation in global frame)" << std::endl;
 
     return 0;
 }

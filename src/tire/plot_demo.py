@@ -321,7 +321,7 @@ def main():
             "x_col": "Normal_Load_lbs",
             "y_col": "C_alpha",
             "xlabel": "Normal Load (lbs)",
-            "ylabel": "Lateral Stiffness C_alpha (lbs/rad)",
+            "ylabel": "Lateral Stiffness C_alpha (lbs/deg)",
             "title_base": "Lateral Stiffness vs Normal Load",
         },
     ]

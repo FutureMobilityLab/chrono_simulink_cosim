@@ -19,11 +19,18 @@ class CH_VEHICLE_API SalaaniTire : public ChSalaaniTire {
     SalaaniTire(const rapidjson::Document& d);
     ~SalaaniTire() {}
 
-    virtual void SetSalaaniParams() override {}
+    /// Return the vertical tire stiffness contribution to the normal force.
+    virtual double GetNormalStiffnessForce(double depth) const override final;
+
+    /// Return the vertical tire damping contribution to the normal force.
+    virtual double GetNormalDampingForce(double depth, double velocity) const override final;
+
     virtual double GetTireMass() const override { return m_mass; }
     virtual ChVector3d GetTireInertia() const override { return m_inertia; }
 
     virtual double GetVisualizationWidth() const override { return m_visualization_width; }
+    
+    virtual void SetSalaaniParams() override { m_measured_side = LEFT; }
 
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
@@ -31,11 +38,17 @@ class CH_VEHICLE_API SalaaniTire : public ChSalaaniTire {
   private:
     virtual void Create(const rapidjson::Document& d) override;
 
+    double m_normalStiffness;
+    double m_normalDamping;
     double m_mass;
     ChVector3d m_inertia;
+    bool m_has_mesh;
+    bool m_has_vis_override;
+    VisualizationType m_vis_override;
+    bool m_has_vert_table;
+    ChFunctionInterp m_vert_map;
 
     double m_visualization_width;
-    bool m_has_mesh;
     std::string m_meshFile_left;
     std::string m_meshFile_right;
     std::shared_ptr<ChVisualShapeTriangleMesh> m_trimesh_shape;

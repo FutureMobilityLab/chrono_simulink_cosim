@@ -1,85 +1,107 @@
-#ifndef RACK_PINIONFORCE_H
-#define RACK_PINIONFORCE_H
+#ifndef SALAANI_MODEL_H
+#define SALAANI_MODEL_H
+
+#include <stdexcept>
+#include <iostream>
 
 namespace tire {
 
 static constexpr double PI = 3.14159265358979323846;
 
+// Structure to hold the output forces and moments
+struct Forces {
+  double FX;  // Longitudinal force (lbs)
+  double FY;  // Lateral force (lbs)
+  double MZ;  // Aligning torque (ft-lbs)
+  double MX;  // Overturning moment (ft-lbs)
+};
+
+// Structure to hold tire parameters (based on Appendix B data)
+struct Params {
+  // Tire lateral stiffness parameters (Equation 26)
+  double C1, C2;        // Lateral stiffness coefficients (CA1, CA2 in MATLAB)
+  double Cam;           // Maximum lateral stiffness (CAm in MATLAB)
+  double FZCam;         // Reference load for lateral stiffness (CAFzm in MATLAB)
+
+  // Tire longitudinal stiffness parameters (Equation 27)
+  double Ckm;           // Initial longitudinal stiffness (CSO in MATLAB)
+  double FZCKM;         // Reference load for longitudinal stiffness (FzxO in MATLAB)
+  double n_val;         // Longitudinal stiffness exponent (Eta in MATLAB)
+
+  // Lateral peak coefficient of friction (Equation 22)
+  double eta1_lat;      // Lateral friction coefficient 1 (Muy1 in MATLAB)
+  double eta2_lat;      // Lateral friction coefficient 2 (Muy2 in MATLAB)
+  double mu_p0_lat;     // Lateral peak friction at reference load (MuyO in MATLAB)
+
+  // Longitudinal peak coefficient of friction (Equation 22)
+  double eta1_long;     // Longitudinal friction coefficient 0 (Mux2 in MATLAB)
+  double eta2_long;     // Longitudinal friction coefficient 1 (Mux1 in MATLAB)
+  double mu_p0_long;    // Longitudinal peak friction at reference load (MuxO in MATLAB)
+
+  double FZ0;           // Reference load for friction calculations (FzO in MATLAB)
+
+  // Lateral decay of friction (Equation 23)
+  double d1_lat;        // Lateral decay coefficient 1 (KMUy1 in MATLAB)
+  double d2_lat;        // Lateral decay coefficient 2 (KMUy2 in MATLAB)
+  double d3_lat;        // Lateral decay coefficient 3 (KMUy3 in MATLAB)
+  double epsilon_sy;    // Lateral sliding coefficient (Lsy in MATLAB)
+
+  // Longitudinal decay of friction (Equation 23)
+  double d1_long;       // Longitudinal decay coefficient 1 (KMUx1 in MATLAB)
+  double d2_long;       // Longitudinal decay coefficient 2 (KMUx2 in MATLAB)
+  double d3_long;       // Longitudinal decay coefficient 3 (KMUx3 in MATLAB)
+  double epsilon_xx;    // Longitudinal sliding coefficient (Lsx in MATLAB)
+
+  // Aligning moment pneumatic trail (Equation 29)
+  double tz1, tz2;      // Pneumatic trail coefficients
+
+  // Aligning moment constants (Equation 20)
+  double epsilon_x;     // Sliding force eccentricity (Epsx in MATLAB)
+  double m1, m0;        // Aligning moment constants
+  
+  // Overturning moment arm (Equation 30)
+  double tx1, tx2, tx3; // Overturning moment arm coefficients
+
+  // Inclination angle lateral force stiffness (Equation 31)
+  double Cr1, Cr2;      // Camber stiffness coefficients (GAMMA1, GAMMA2 in MATLAB)
+
+  // Additional parameters
+  double Rt;            // Contact patch length
+  double Cz_contact;    // Contact patch stiffness
+  double beta;          // Tire relaxation length
+  double plysteer;      // Plysteer offset
+
+  // Tire validation range.
+  double MUNTEST; // Test friction coefficient
+  double FzMax; // Maximum valid normal force (lbs).
+};
+
 class SalaaniTireModel {
  public:
-  // Structure to hold the output forces and moments
-  struct Forces {
-    double FX;  // Longitudinal force (lbs)
-    double FY;  // Lateral force (lbs)
-    double MZ;  // Aligning torque (ft-lbs)
-    double MX;  // Overturning moment (ft-lbs)
-  };
 
-  // Structure to hold tire parameters (based on Appendix B data)
-  struct Params {
-    // Tire lateral stiffness parameters (Equation 26)
-    double C1, C2;        // Lateral stiffness coefficients (CA1, CA2 in MATLAB)
-    double Cam;           // Maximum lateral stiffness (CAm in MATLAB)
-    double FZCam;         // Reference load for lateral stiffness (CAFzm in MATLAB)
-  
-    // Tire longitudinal stiffness parameters (Equation 27)
-    double Ckm;           // Initial longitudinal stiffness (CSO in MATLAB)
-    double FZCKM;         // Reference load for longitudinal stiffness (FzxO in MATLAB)
-    double n_val;         // Longitudinal stiffness exponent (Eta in MATLAB)
-  
-    // Lateral peak coefficient of friction (Equation 22)
-    double eta1_lat;      // Lateral friction coefficient 1 (Muy1 in MATLAB)
-    double eta2_lat;      // Lateral friction coefficient 2 (Muy2 in MATLAB)
-    double mu_p0_lat;     // Lateral peak friction at reference load (MuyO in MATLAB)
-  
-    // Longitudinal peak coefficient of friction (Equation 22)
-    double eta0_long;     // Longitudinal friction coefficient 0 (Mux2 in MATLAB)
-    double eta1_long;     // Longitudinal friction coefficient 1 (Mux1 in MATLAB)
-    double mu_p0_long;    // Longitudinal peak friction at reference load (MuxO in MATLAB)
-  
-    double FZ0;           // Reference load for friction calculations (FzO in MATLAB)
-  
-    // Lateral decay of friction (Equation 23)
-    double d1_lat;        // Lateral decay coefficient 1 (KMUy1 in MATLAB)
-    double d2_lat;        // Lateral decay coefficient 2 (KMUy2 in MATLAB)
-    double d3_lat;        // Lateral decay coefficient 3 (KMUy3 in MATLAB)
-    double epsilon_sy;    // Lateral sliding coefficient (Lsy in MATLAB)
-  
-    // Longitudinal decay of friction (Equation 23)
-    double d1_long;       // Longitudinal decay coefficient 1 (KMUx1 in MATLAB)
-    double d2_long;       // Longitudinal decay coefficient 2 (KMUx2 in MATLAB)
-    double d3_long;       // Longitudinal decay coefficient 3 (KMUx3 in MATLAB)
-    double epsilon_xx;    // Longitudinal sliding coefficient (Lsx in MATLAB)
-  
-    // Aligning moment pneumatic trail (Equation 29)
-    double tz1, tz2;      // Pneumatic trail coefficients
-  
-    // Aligning moment constants (Equation 20)
-    double epsilon_x;     // Sliding force eccentricity (Epsx in MATLAB)
-    double m1, m0;        // Aligning moment constants
-  
-    // Overturning moment arm (Equation 30)
-    double tx1, tx2, tx3; // Overturning moment arm coefficients
-  
-    // Inclination angle lateral force stiffness (Equation 31)
-    double Cr1, Cr2;      // Camber stiffness coefficients (GAMMA1, GAMMA2 in MATLAB)
-  
-    // Additional parameters
-    double Rt;            // Contact patch length
-    double Cz_contact;    // Contact patch stiffness
-    double beta;          // Tire relaxation length
-    double plysteer;      // Plysteer offset
-  
-    // Friction coefficients (assumed nominal = test conditions)
-    double MUNOM;   // Nominal friction coefficient
-    double MUNTEST; // Test friction coefficient
-  
-    // Tire validation range.
-    double FzMax; // Maximum valid normal force (lbs).
-  };
+  // Default constructor that sets all parameters to 0
+  // WARNING: This creates a tire model with all parameters = 0!
+  // This will cause division by zero and invalid physics results.
+  // Only use for testing or if you plan to call SetParams() immediately after.
+  SalaaniTireModel() : tire_params{} {
+    // All parameters initialized to 0 via default aggregate initialization
+    // validateParameters() is NOT called to allow zero values
+  }
 
   SalaaniTireModel(const Params& params)
-    : tire_params(params) {};
+    : tire_params(params) {
+    validateParameters();
+    is_valid = true;
+  }
+
+  void SetParams(const Params& params) {
+    std::cout << "Setting parameters.\n";
+    tire_params = params;
+    validateParameters();
+    is_valid = true;
+  }
+
+  double GetValidatedMu() {return tire_params.MUNTEST;};
 
   /**
   * Salaani Tire Model Implementation
@@ -93,17 +115,21 @@ class SalaaniTireModel {
   * @return TireForces structure containing FX, FY, MZ, MX
   */
   Forces calculateTireForces(const double ALPHA, const double S,
-                                 const double GAMMA, const double FZ);
+                             const double GAMMA, const double FZ,
+                             const double MUNOM=0.85);
 
  private:
-  const Params tire_params;
+  void validateParameters() const;
+
+  Params tire_params;
+  bool is_valid = false;
 };
 
 // Predefined tire parameter sets from Appendix B
 namespace TireData {
 
   // Data for Bridgestone P255/35R18
-  const SalaaniTireModel::Params bridgestone_255_35R18 = {
+  const Params bridgestone_255_35R18 = {
     // Lateral stiffness parameters
     .C1 = -1.59242290928,
     .C2 = -1.52199874366,
@@ -121,8 +147,8 @@ namespace TireData {
     .mu_p0_lat = 1.208943826166,
           
     // Longitudinal peak friction
-    .eta0_long = 0.0,
-    .eta1_long = -0.01439837983,
+    .eta1_long = 0.0,
+    .eta2_long = -0.01439837983,
     .mu_p0_long = 1.243813670770,
     .FZ0 = 4.004967669e+2,
     
@@ -161,11 +187,12 @@ namespace TireData {
     .plysteer = -1.788346665e-4,
 
     // Validation range.
+    .MUNTEST = 0.85,
     .FzMax = 1600.0
   };
   
   // Data for Bridgestone P225/40R18
-  const SalaaniTireModel::Params bridgestone_225_40R18 = {
+  const Params bridgestone_225_40R18 = {
     // Lateral stiffness parameters
     .C1 = -2.87732766366,
     .C2 = -1.58418227108,
@@ -183,8 +210,8 @@ namespace TireData {
     .mu_p0_lat = 1.215873626204,
     
     // Longitudinal peak friction
-    .eta0_long = 0.0,
-    .eta1_long = -0.04151186868,
+    .eta1_long = 0.0,
+    .eta2_long = -0.04151186868,
     .mu_p0_long = 1.266284298601,
     .FZ0 = 4.017939206e+2,
           
@@ -223,11 +250,12 @@ namespace TireData {
     .plysteer = -0.00137043289,
 
     // Validation range.
+    .MUNTEST = 0.85,
     .FzMax = 2001.0
   };
   
   // Data for Continental P265/70R17
-  const SalaaniTireModel::Params continental_265_70R17 = {
+  const Params continental_265_70R17 = {
     // Lateral stiffness parameters
     .C1 = -6.6858662762207,
     .C2 = -2.390762975025,
@@ -245,8 +273,8 @@ namespace TireData {
     .mu_p0_lat = 1.1328139729802,
     
     // Longitudinal peak friction
-    .eta0_long = 0.033127840588,
-    .eta1_long = -0.122260930831,
+    .eta1_long = 0.033127840588,
+    .eta2_long = -0.122260930831,
     .mu_p0_long = 1.2134062679177,
     .FZ0 = 6.0055968210e+2,
           
@@ -285,11 +313,12 @@ namespace TireData {
     .plysteer = -8.4908907595e-4,
 
     // Validation range.
+    .MUNTEST = 0.85,
     .FzMax = 3001.0
   };
   
   // Data for Goodyear P225/60R16
-  const SalaaniTireModel::Params goodyear_225_60R16 = {
+  const Params goodyear_225_60R16 = {
     // Lateral stiffness parameters
     .C1 = -5.49866853851,
     .C2 = -2.11626207379,
@@ -307,8 +336,8 @@ namespace TireData {
     .mu_p0_lat = 1.192842481344,
     
     // Longitudinal peak friction
-    .eta0_long = 0.026628558245,
-    .eta1_long = -0.02196648837,
+    .eta1_long = 0.026628558245,
+    .eta2_long = -0.02196648837,
     .mu_p0_long = 1.075904559373,
     .FZ0 = 4.607008849e+2,
           
@@ -347,6 +376,7 @@ namespace TireData {
     .plysteer = 3.714581147e-4,
 
     // Validation range.
+    .MUNTEST = 0.85,
     .FzMax = 2302.0
   };
   
