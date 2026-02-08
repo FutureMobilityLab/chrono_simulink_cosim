@@ -1,0 +1,10 @@
+{
+    "Name": "Expedition Simple Engine",
+    "Type": "Engine",
+    "Template": "EngineSimple",
+  
+    "Maximum Engine Torque": 475,
+    "Maximum Engine Power": 194000,
+    "Maximum Engine Speed": 6000
+  }
+  

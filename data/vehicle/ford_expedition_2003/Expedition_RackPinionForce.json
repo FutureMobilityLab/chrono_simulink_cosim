@@ -1,7 +1,7 @@
 {
   "Name":                       "2003 Ford Expedition Rack-Pinion Steering",
   "Type":                       "Steering",
-  "Template":                   "RackPinion",
+  "Template":                   "RackPinionForce",
 
   // Body 2.
   "Steering Link":
@@ -12,7 +12,9 @@
     "Inertia":                  [0.004, 0.01, 0.01],
     "Radius":                   0.03,
     // Twice the y location of point 6.
-    "Length":                   0.980
+    "Length":                   0.980,
+    "Damping":                  1000.0,
+    "Stiffness":                0.0
   },
 
   "Pinion":
@@ -22,7 +24,6 @@
     // states the steering wheel angle to rack displacement ratio is 
     // 121.0 rad/m.
     "Radius":                   0.0082644628,
-    // Setting this makes the steering input scaled as radian degrees.
     "Maximum Angle (deg)":      480.0
   }
 }

@@ -8,7 +8,7 @@
   // Chrono uses x: forward, y: left, z: up. So the data has been adjusted accordingly.
   "Name": "NADS Vehicle - Ford Expedition 2003",
   "Type": "Vehicle",
-  "Template": "WheeledVehicle",
+  "Template": "WheeledVehicleForce",
 
   "Chassis": {
     "Input File": "ford_expedition_2003/Expedition_Chassis.json"
@@ -19,10 +19,12 @@
       "Suspension Input File": "ford_expedition_2003/Expedition_FrontDoubleWishbone.json",
       "Suspension Location": [0, 0, 0],
       "Steering Index": 0,
-      "Left Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
-      "Right Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Left Wheel Input File": "ford_expedition_2003/Expedition_Front_Wheel.json",
+      "Right Wheel Input File": "ford_expedition_2003/Expedition_Front_Wheel.json",
       "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
-      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json"//,
+      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
+      "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
+      // "Tire Input File": "hmmwv/tire/HMMWV_Pac89Tire.json"
       //"Antirollbar Input File": "ford_expedition_2003/antirollbar/FrontAntirollBarRSD.json",
       //"Antirollbar Location": [ -0.343, 0.0, 0.290 ]
     },
@@ -30,10 +32,12 @@
     {
       "Suspension Input File": "ford_expedition_2003/Expedition_RearDoubleWishbone.json",
       "Suspension Location": [0, 0, 0],
-      "Left Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
-      "Right Wheel Input File": "ford_expedition_2003/Expedition_Wheel.json",
+      "Left Wheel Input File": "ford_expedition_2003/Expedition_Rear_Wheel.json",
+      "Right Wheel Input File": "ford_expedition_2003/Expedition_Rear_Wheel.json",
       "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
-      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json"//,
+      "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
+      "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
+      // "Tire Input File": "hmmwv/tire/HMMWV_Pac89Tire.json"
       //"Antirollbar Input File": "ford_expedition_2003/antirollbar/RearAntirollBarRSD.json",
       //"Antirollbar Location": [ -3.3, 0.0, 0.35 ]
     }
@@ -53,7 +57,13 @@
   "Maximum Steering Angle (deg)": 25,
 
   "Driveline": {
-    "Input File": "ford_expedition_2003/Expedition_Driveline.json",
+    "Input File": "ford_expedition_2003/Expedition_Driveline4WD.json",
     "Suspension Indexes": [ 0, 1 ]
+  },
+
+  "Powertrain": {
+    "Engine Input File": "ford_expedition_2003/Expedition_EngineShafts.json",
+    "Transmission Input File": "ford_expedition_2003/Expedition_AutomaticTransmissionSimpleMap.json"
+    // "Transmission Input File": "sedan_force/powertrain/Sedan_ManualTransmissionShafts.json"
   }
 }

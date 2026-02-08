@@ -1,0 +1,108 @@
+{
+  "Name": "Continental P265/70R17",
+  "Type": "Tire",
+  "Template": "SalaaniTire",
+
+  "Unloaded Radius [m]": 0.3266,
+  "Rim Radius [m]": 0.2159,
+  "Aspect Ratio [%]": 70,
+  "Maximum Load [kg]": 1215,
+  "Width [m]": 0.265,
+  "Mass [kg]": 15.2,
+  "Inertia [kg.m2]": [0.235, 0.942, 0.235],
+  // "Vertical Stiffness": 270394.0,
+  // "Vertical Damping":  2000.0,
+  "Vertical Stiffness": 326332.4234,  // defines linear stiffness, when no curve table is present
+  "Vertical Damping": 3483.932502,
+  "Enable Lateral Relaxation": false,
+
+  "SalaaniCoeffs": {
+    "lateral_stiffness": {
+      "C1": -6.6858662762207,
+      "C2": -2.390762975025,
+      "Cam": 22918.311805,
+      "FZCam": 4000
+    },
+    "longitudinal_stiffness": {
+      "Ckm": 2929.1631099,
+      "FZCKM": 162.85995133,
+      "n_val": 1.158373015412
+    },
+    "lateral_peak_friction": {
+      "eta1_lat": -0.046243350096,
+      "eta2_lat": -0.128452487507,
+      "mu_p0_lat": 1.1328139729802
+    },
+    "longitudinal_peak_friction": {
+      "eta1_long": 0.033127840588,
+      "eta2_long": -0.122260930831,
+      "mu_p0_long": 1.2134062679177,
+      "FZ0": 600.55968210
+    },
+    "lateral_friction_decay": {
+      "d1_lat": 0.00000005797626815,
+      "d2_lat": -0.0003024992368,
+      "d3_lat": 0.689854938838,
+      "epsilon_sy": 1.07
+    },
+    "longitudinal_friction_decay": {
+      "d1_long": 0.000000071643166552,
+      "d2_long": 0.000216688774920,
+      "d3_long": 0.1352352248580,
+      "epsilon_xx": 0.95
+    },
+    "aligning_moment": {
+      "tz1": -0.000000010037205363,
+      "tz2": -0.00006238569625,
+      "epsilon_x": 0.01,
+      "m1": 0.6,
+      "m0": 0.785398163397
+    },
+    "overturning_moment": {
+      "tx1": 0.00000001821328765,
+      "tx2": 0.00001261045790,
+      "tx3": -0.0345896969384
+    },
+    "inclination_angle": {
+      "Cr1": 0.873256746984,
+      "Cr2": -0.000029279324497
+    },
+    "additional_parameters": {
+      "Rt": 15.63,
+      "Cz_contact": 1544.432073,
+      "beta": 2.118775049325,
+      "plysteer": -0.00084908907595
+    },
+    "validation_range": {
+      "MUNTEST": 0.85,
+      "FzMax": 3001.0
+    }
+  },
+
+  "DahlCoeffs": {
+    "sigma0": 1000000.0,
+    "sigma1": 50000.0
+  },
+
+  "SpeedBasedTireModelBlending": {
+    "Enable": false,
+    "Friction Blend Begin [m/s]": 1.0,
+    "Friction Blend End [m/s]": 3.0
+  },
+
+  "TimeBasedTireModelBlending": {
+    "Use Startup Transition": false,
+    "Begin Start Transition [s]": 0,
+    "End Start Transition [s]": 4.0
+  },
+
+  "Visualization": {
+    // "Mesh Filename Left": "sedan_force/sedan_tire.obj",
+    // "Mesh Filename Right": "sedan_force/sedan_tire.obj"
+    "Mesh Filename Left": "hmmwv/hmmwv_tire_right.obj",
+    "Mesh Filename Right": "hmmwv/hmmwv_tire_right.obj",
+    "Width": 0.318,
+    "Visualization Type": "Primitives"
+    // "Visualization Type": "Mesh"
+  }
+}
