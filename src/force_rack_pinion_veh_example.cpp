@@ -154,8 +154,12 @@ void InitializeInputArray(double input[simulation_interface::Input::LENGTH]) {
 
 int main(int argc, char *argv[])
 {
-  auto simulation_interface = simulation_interface::SimulationInterface("sedan");
-  // auto simulation_interface = simulation_interface::SimulationInterface("hmmwv");
+  chrono::vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
+  chrono::SetChronoDataPath(CHRONO_DATA_DIR);
+  const std::string vehicle_model_name = "ford_expedition_2003";
+  // const std::string vehicle_model_name = "hmmwv";
+  // const std::string vehicle_model_name = "sedan";
+  auto simulation_interface = simulation_interface::SimulationInterface(vehicle_model_name.c_str());
 
   auto vis = chrono_types::make_shared<chrono::vehicle::ChWheeledVehicleVisualSystemIrrlicht>();
   vis->SetWindowTitle("Rack and pinion demo");
@@ -165,6 +169,9 @@ int main(int argc, char *argv[])
   vis->AddLightDirectional();
   vis->AddSkyBox();
   vis->AddLogo();
+  // Add a large grid to represent the ground since the custom terrain has no visual model.
+  vis->AddGrid(1.0, 1.0, 200, 200, chrono::ChCoordsys<>(chrono::ChVector3<>(0, 0, 0), chrono::QUNIT),
+               chrono::ChColor(0.4f, 0.4f, 0.4f));
 
   simulation_interface.SetVis(vis);
   
@@ -186,8 +193,8 @@ int main(int argc, char *argv[])
   double time = 0.0;
   const double time_step = simulation_interface.GetStepSize();
 
-  // ground_height_func_t ground_height_func = CalculateFlatGroundHeight;
-  ground_height_func_t ground_height_func = CalculateRadialWaveGroundHeight;
+  ground_height_func_t ground_height_func = CalculateFlatGroundHeight;
+  // ground_height_func_t ground_height_func = CalculateRadialWaveGroundHeight;
   // ground_height_func_t ground_height_func = CalculateRampUpGroundHeight;
 
   Terrain fl_terrain;
@@ -252,27 +259,75 @@ int main(int argc, char *argv[])
     input[simulation_interface::Input::TERRAIN_MU_RR] = friction;
 
     // Set actuator commands.
-    input[simulation_interface::Input::STEERING] = SineSteer(time);
-    if (time > 5 && time < 10) {
-      input[simulation_interface::Input::THROTTLE] = 0.0;
-      input[simulation_interface::Input::BRAKE] = 0.0;
-    } else if (time >= 10 && time < 20) {
+    // input[simulation_interface::Input::STEERING] = SineSteer(time);
+    input[simulation_interface::Input::STEERING] = 2.0*time;
+    if (time < 5) {
       input[simulation_interface::Input::THROTTLE] = 1.0;
       input[simulation_interface::Input::BRAKE] = 0.0;
-    } else if (time >= 20) {
+    } else if (time > 5 && time < 6) {
       input[simulation_interface::Input::THROTTLE] = 0.0;
       input[simulation_interface::Input::BRAKE] = 1.0;
+    } else if (time >= 6 && time < 10) {
+      input[simulation_interface::Input::THROTTLE] = 1.0;
+      input[simulation_interface::Input::BRAKE] = 0.0;
+    } else if (time >= 10) {
+      input[simulation_interface::Input::THROTTLE] = 0.0;
+      input[simulation_interface::Input::BRAKE] = 100.0;
     }
     
     // Execute simulation step with updated terrain parameters
+    // std::cout << "T: " << time
+    //           << "\tStr: " << input[simulation_interface::Input::STEERING]
+    //           << "\tThr: " << input[simulation_interface::Input::THROTTLE]
+    //           << "\tBrk: " << input[simulation_interface::Input::BRAKE]
+    //           << "\tVel: " << output[simulation_interface::Output::CHASSIS_VEL_X]
+    //           << "\tPin: " << output[simulation_interface::Output::STEERING_PINION_ANGLE] * chrono::CH_RAD_TO_DEG
+    //           << "\tFL[deg]: " << output[simulation_interface::Output::WHEEL_STEER_ANG_FL] * chrono::CH_RAD_TO_DEG
+    //           << "\n";
+
+    /*
     std::cout << "T: " << time
-              << "\tStr: " << input[simulation_interface::Input::STEERING]
-              << "\tThr: " << input[simulation_interface::Input::THROTTLE]
-              << "\tBrk: " << input[simulation_interface::Input::BRAKE]
-              << "\tVel: " << output[simulation_interface::Output::CHASSIS_VEL_X]
-              << "\tPin: " << output[simulation_interface::Output::STEERING_PINION_ANGLE] * chrono::CH_RAD_TO_DEG
-              << "\tFL[deg]: " << output[simulation_interface::Output::WHEEL_STEER_ANG_FL] * chrono::CH_RAD_TO_DEG
+              << "\tFL Force X: " << output[simulation_interface::Output::TIRE_FORCE_LONG_FL]
+              << "\tFR Force X: " << output[simulation_interface::Output::TIRE_FORCE_LONG_FR]
+              << "\tRL Force X: " << output[simulation_interface::Output::TIRE_FORCE_LONG_RL]
+              << "\tRR Force X: " << output[simulation_interface::Output::TIRE_FORCE_LONG_RR]
               << "\n";
+
+    std::cout << "T: " << time
+              << "\tFL Force Y: " << output[simulation_interface::Output::TIRE_FORCE_LAT_FL]
+              << "\tFR Force Y: " << output[simulation_interface::Output::TIRE_FORCE_LAT_FR]
+              << "\tRL Force Y: " << output[simulation_interface::Output::TIRE_FORCE_LAT_RL]
+              << "\tRR Force Y: " << output[simulation_interface::Output::TIRE_FORCE_LAT_RR]
+              << "\n";
+
+    std::cout << "T: " << time
+              << "\tFL Force Z: " << output[simulation_interface::Output::TIRE_FORCE_VERT_FL]
+              << "\tFR Force Z: " << output[simulation_interface::Output::TIRE_FORCE_VERT_FR]
+              << "\tRL Force Z: " << output[simulation_interface::Output::TIRE_FORCE_VERT_RL]
+              << "\tRR Force Z: " << output[simulation_interface::Output::TIRE_FORCE_VERT_RR]
+              << "\n";
+
+    std::cout << "T: " << time
+              << "\tFL Moment X: " << output[simulation_interface::Output::TIRE_MOMENT_X_FL]
+              << "\tFR Moment X: " << output[simulation_interface::Output::TIRE_MOMENT_X_FR]
+              << "\tRL Moment X: " << output[simulation_interface::Output::TIRE_MOMENT_X_RL]
+              << "\tRR Moment X: " << output[simulation_interface::Output::TIRE_MOMENT_X_RR]
+              << "\n";
+
+    std::cout << "T: " << time
+              << "\tFL Moment Y: " << output[simulation_interface::Output::TIRE_MOMENT_Y_FL]
+              << "\tFR Moment Y: " << output[simulation_interface::Output::TIRE_MOMENT_Y_FR]
+              << "\tRL Moment Y: " << output[simulation_interface::Output::TIRE_MOMENT_Y_RL]
+              << "\tRR Moment Y: " << output[simulation_interface::Output::TIRE_MOMENT_Y_RR]
+              << "\n";
+
+    std::cout << "T: " << time
+              << "\tFL Moment Z: " << output[simulation_interface::Output::TIRE_MOMENT_Z_FL]
+              << "\tFR Moment Z: " << output[simulation_interface::Output::TIRE_MOMENT_Z_FR]
+              << "\tRL Moment Z: " << output[simulation_interface::Output::TIRE_MOMENT_Z_RL]
+              << "\tRR Moment Z: " << output[simulation_interface::Output::TIRE_MOMENT_Z_RR]
+              << "\n";
+    */
     simulation_interface.Step(input, output);
   }
   
