@@ -15,7 +15,8 @@
       "Left Wheel Input File": "sedan_force/wheel/Sedan_Wheel.json",
       "Right Wheel Input File": "sedan_force/wheel/Sedan_Wheel.json",
       "Left Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json",
-      "Right Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json"
+      "Right Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json",
+      "Tire Input File": "sedan_force/tire/bridgestone_P255_35R18.json"
     },
 
     {
@@ -24,7 +25,8 @@
       "Left Wheel Input File": "sedan_force/wheel/Sedan_Wheel.json",
       "Right Wheel Input File": "sedan_force/wheel/Sedan_Wheel.json",
       "Left Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json",
-      "Right Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json"
+      "Right Brake Input File": "sedan_force/brake/Sedan_BrakeSimple.json",
+      "Tire Input File": "sedan_force/tire/bridgestone_P255_35R18.json"
     }
   ],
 
@@ -43,5 +45,10 @@
   "Driveline": {
     "Input File": "sedan_force/driveline/Sedan_Driveline2WD.json",
     "Suspension Indexes": [ 1 ]
+  },
+
+  "Powertrain": {
+    "Engine Input File": "sedan_force/powertrain/Sedan_EngineShafts.json",
+    "Transmission Input File": "sedan_force/powertrain/Sedan_AutomaticTransmissionSimpleMap.json"
   }
 }

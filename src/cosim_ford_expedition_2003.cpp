@@ -155,6 +155,7 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the vehicle system
+    chrono::vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
     WheeledVehicle car(GetDataFile(vehicle_model.VehicleJSON()), vehicle_model.ContactMethod());
     car.Initialize(ChCoordsys<>(initLoc, initRot));
     car.GetChassis()->SetFixed(false);
