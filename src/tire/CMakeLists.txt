@@ -3,6 +3,11 @@ create_executable(demo_salaani_model
     DEPS salaani_model
 )
 
+create_executable(demo_stiremod
+    SRCS demo_stiremod.cpp
+    DEPS stiremod
+)
+
 create_library(salaani_model STATIC
     SRCS salaani_model.cpp
     HDRS salaani_model.h
@@ -21,4 +26,10 @@ create_library(salaani_tire STATIC
     HDRS SalaaniTire.h
     DEPS ch_salaani_tire
     USES_CHRONO
+)
+
+create_library(stiremod STATIC
+    SRCS stiremod.cpp
+    HDRS stiremod.h
+    DEPS
 )
