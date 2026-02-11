@@ -23,8 +23,9 @@
       "Right Wheel Input File": "ford_expedition_2003/Expedition_Front_Wheel.json",
       "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
       "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
-      "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
+      // "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
       // "Tire Input File": "hmmwv/tire/HMMWV_Pac89Tire.json"
+      "Tire Input File": "ford_expedition_2003/Expedition_StiremodTire.json"
       //"Antirollbar Input File": "ford_expedition_2003/antirollbar/FrontAntirollBarRSD.json",
       //"Antirollbar Location": [ -0.343, 0.0, 0.290 ]
     },
@@ -36,8 +37,9 @@
       "Right Wheel Input File": "ford_expedition_2003/Expedition_Rear_Wheel.json",
       "Left Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
       "Right Brake Input File": "ford_expedition_2003/Expedition_BrakeSimple.json",
-      "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
+      // "Tire Input File": "ford_expedition_2003/continental_P265_70R17.json"//,
       // "Tire Input File": "hmmwv/tire/HMMWV_Pac89Tire.json"
+      "Tire Input File": "ford_expedition_2003/Expedition_StiremodTire.json"
       //"Antirollbar Input File": "ford_expedition_2003/antirollbar/RearAntirollBarRSD.json",
       //"Antirollbar Location": [ -3.3, 0.0, 0.35 ]
     }

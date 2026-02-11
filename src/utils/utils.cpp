@@ -4,6 +4,7 @@
 #include "src/utils/utils.h"
 #include "src/steering/RackPinionForce.h"
 #include "src/tire/SalaaniTire.h"
+#include "src/tire/StiremodTire.h"
 
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 
@@ -100,6 +101,8 @@ namespace chrono::vehicle {
         tire = chrono_types::make_shared<FEATire>(d);
     } else if (subtype.compare("SalaaniTire") == 0) {
         tire = chrono_types::make_shared<SalaaniTire>(d);
+    } else if (subtype.compare("StiremodTire") == 0) {
+        tire = chrono_types::make_shared<StiremodTire>(d);
     } else {
         throw std::invalid_argument("Tire type not supported in ReadTireJSON.");
     }

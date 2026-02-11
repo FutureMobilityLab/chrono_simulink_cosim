@@ -33,3 +33,17 @@ create_library(stiremod STATIC
     HDRS stiremod.h
     DEPS
 )
+
+create_library(ch_stiremod_tire STATIC
+    SRCS ChStiremodTire.cpp
+    HDRS ChStiremodTire.h
+    DEPS stiremod utils
+    USES_CHRONO
+)
+
+create_library(stiremod_tire STATIC
+    SRCS StiremodTire.cpp
+    HDRS StiremodTire.h
+    DEPS ch_stiremod_tire
+    USES_CHRONO
+)
