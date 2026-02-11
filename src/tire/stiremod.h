@@ -27,7 +27,7 @@ struct StiremodParams {
 
     // Friction Decay (Eq 12)
     double K_mux;
-    
+
     // Dynamic K_muy parameters
     double K_muy_offset;
     double K_muy_slope;
@@ -43,33 +43,32 @@ struct StiremodParams {
     double SN_t;      // Skid number of test
 };
 
-class StiremodTire {
-public:
-    // Initialize the STIREMOD tire model with a struct of parameters.
-    StiremodTire(const StiremodParams& params);
-
-    struct TireForces {
-        double Fx;
-        double Fy;
-        double Mz;
-        double alpha_rad;
-    };
-
-    /**
-     * Calculate tire forces and moments.
-     * * Inputs:
-     * Fz: Normal load (lbs)
-     * alpha_deg: Slip angle (degrees)
-     * slip_ratio: Longitudinal slip ratio (S)
-     * gamma_deg: Camber angle (degrees)
-     * V_mph: Vehicle speed (mph) - used for lag, defaults to 40 for static plots
-     * * Returns:
-     * TireForces struct containing Fx, Fy, Mz, and alpha_rad
-     */
-    TireForces calculate(double Fz, double alpha_deg, double slip_ratio, double gamma_deg, double V_mph = 40.0);
-
-private:
-    StiremodParams p;
+struct StiremodForces {
+    double Fx;
+    double Fy;
+    double Mz;
+    double alpha_rad;
 };
+
+/**
+ * Calculate tire forces and moments using the STI tire model.
+ *
+ * Inputs:
+ *   p         : Model parameters
+ *   Fz        : Normal load (lbs)
+ *   alpha_deg : Slip angle (degrees)
+ *   slip_ratio: Longitudinal slip ratio (S)
+ *   gamma_deg : Camber angle (degrees)
+ *   V_mph     : Vehicle speed (mph) - reserved for future lag model, defaults to 40
+ *
+ * Returns:
+ *   StiremodForces struct containing Fx (lbs), Fy (lbs), Mz (ft·lbs), alpha_rad
+ */
+StiremodForces stiremod_calculate(const StiremodParams& p,
+                                  double Fz,
+                                  double alpha_deg,
+                                  double slip_ratio,
+                                  double gamma_deg,
+                                  double V_mph = 40.0);
 
 #endif // STIREMOD_H
