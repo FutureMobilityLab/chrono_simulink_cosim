@@ -61,6 +61,18 @@ void StiremodTire::Create(const rapidjson::Document& d) {
         m_normalDamping     = dp["Vertical Damping"].GetDouble();
         m_rolling_resistance = dp["Rolling Resistance"].GetDouble();
 
+        // Relaxation lengths for transient slip dynamics (optional, default 0 = no lag)
+        if (dp.HasMember("Longitudinal Relaxation Length")) {
+            m_longitudinal_relax_length = dp["Longitudinal Relaxation Length"].GetDouble();
+        } else {
+            m_longitudinal_relax_length = 0.0;
+        }
+        if (dp.HasMember("Lateral Relaxation Length")) {
+            m_lateral_relax_length = dp["Lateral Relaxation Length"].GetDouble();
+        } else {
+            m_lateral_relax_length = 0.0;
+        }
+
         if (dp.HasMember("Vertical Curve Data")) {
             int num_points = dp["Vertical Curve Data"].Size();
             for (int i = 0; i < num_points; i++) {

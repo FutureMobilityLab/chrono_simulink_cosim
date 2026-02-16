@@ -81,17 +81,20 @@ class CH_VEHICLE_API ChStiremodTire : public ChForceElementTire {
 
   protected:
     /// Populate m_unloaded_radius, m_width, m_rolling_resistance,
-    /// m_lateral_stiffness, and m_stiParams in the derived class.
+    /// m_lateral_stiffness, m_longitudinal_relax_length, m_lateral_relax_length,
+    /// and m_stiParams in the derived class.
     virtual void SetStiremodParams() = 0;
 
     // -------------------------------------------------------------------------
     // Parameters set by the derived class via SetStiremodParams()
     // -------------------------------------------------------------------------
 
-    double m_unloaded_radius;     ///< Unloaded tire radius (m)
-    double m_width;               ///< Tire section width (m)
-    double m_rolling_resistance;  ///< Rolling resistance coefficient
-    double m_lateral_stiffness;   ///< Lateral stiffness for overturning moment (N/m)
+    double m_unloaded_radius;        ///< Unloaded tire radius (m)
+    double m_width;                  ///< Tire section width (m)
+    double m_rolling_resistance;     ///< Rolling resistance coefficient
+    double m_lateral_stiffness;      ///< Lateral stiffness for overturning moment (N/m)
+    double m_longitudinal_relax_length;  ///< Longitudinal relaxation length for transient slip (m)
+    double m_lateral_relax_length;       ///< Lateral relaxation length for transient slip angle (m)
     VehicleSide m_measured_side;
 
     /// STIREMOD model parameters (all in Imperial units as required by stiremod.h)
@@ -127,16 +130,18 @@ class CH_VEHICLE_API ChStiremodTire : public ChForceElementTire {
     void CombinedCoulombForces(double& fx, double& fy, double fz, double muscale);
 
     struct TireStates {
-        double cp_long_slip;     ///< Longitudinal slip (kappa, dimensionless)
-        double cp_side_slip;     ///< Side slip angle (alpha, rad, modified-SAE sign)
-        double vx;               ///< Longitudinal speed at contact (m/s)
-        double vsx;              ///< Longitudinal slip velocity (m/s)
-        double vsy;              ///< Lateral slip velocity (m/s)
-        double omega;            ///< Wheel spin rate (rad/s)
-        double R_eff;            ///< Effective rolling radius (m)
-        double brx{0};           ///< Dahl bristle deformation, longitudinal (m)
-        double bry{0};           ///< Dahl bristle deformation, lateral (m)
-        ChVector3d disc_normal;  ///< Wheel disc normal in global frame (debug)
+        double cp_long_slip;        ///< Steady-state longitudinal slip (kappa, dimensionless)
+        double cp_side_slip;        ///< Steady-state side slip angle (alpha, rad, modified-SAE sign)
+        double cp_long_slip_t{0};   ///< Transient longitudinal slip (dimensionless)
+        double cp_side_slip_t{0};   ///< Transient side slip angle (rad, modified-SAE sign)
+        double vx;                  ///< Longitudinal speed at contact (m/s)
+        double vsx;                 ///< Longitudinal slip velocity (m/s)
+        double vsy;                 ///< Lateral slip velocity (m/s)
+        double omega;               ///< Wheel spin rate (rad/s)
+        double R_eff;               ///< Effective rolling radius (m)
+        double brx{0};              ///< Dahl bristle deformation, longitudinal (m)
+        double bry{0};              ///< Dahl bristle deformation, lateral (m)
+        ChVector3d disc_normal;     ///< Wheel disc normal in global frame (debug)
     };
 
     TireStates m_states;

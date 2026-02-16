@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     # Set a very small amount of throttle so that the automatic transmission stays in
     # forward gear. Apply delay to allow vehicle to settle on terrain.
-    input_data_np[:, si.Input.THROTTLE] = 0.5 * np.ones_like(sim_time)
+    input_data_np[:, si.Input.THROTTLE] = 1.0 * np.ones_like(sim_time)
     # input_data_np[delay_mask, si.Input.THROTTLE] = 0
     # input_data_np[:, si.Input.BRAKE] = 1.0
 
@@ -117,8 +117,8 @@ if __name__ == "__main__":
             if (i % 1000) == 0.0:
                 print(f"time_now:{time_now}")
             # Set steering from CSV trajectory
-            # steer_cmd = np.interp(time_now, time_steer, steer_rad)
-            steer_cmd = 0.0
+            steer_cmd = np.interp(time_now, time_steer, steer_rad)
+            # steer_cmd = 0.0
             input_data_np[i, si.Input.STEERING] = steer_cmd
             output_data_np[i, :] = sim.step(input_data_np[i, :])
     except RuntimeError as e:

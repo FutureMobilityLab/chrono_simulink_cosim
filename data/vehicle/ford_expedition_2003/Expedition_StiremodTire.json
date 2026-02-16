@@ -14,7 +14,9 @@
         "Vertical Stiffness": 270394.0,
         "Vertical Damping": 2000.0,
         "Carcass Lateral Stiffness": 261065.0,
-        "Rolling Resistance": 0.02
+        "Rolling Resistance": 0.02,
+        "Longitudinal Relaxation Length": 0.1,
+        "Lateral Relaxation Length": 0.5916168
     },
 
     "STIREMOD Parameters": {

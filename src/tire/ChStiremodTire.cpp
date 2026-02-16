@@ -124,6 +124,8 @@ void ChStiremodTire::Synchronize(double time, const ChTerrain& terrain) {
         m_states.R_eff        = m_unloaded_radius;
         m_states.cp_long_slip = 0;
         m_states.cp_side_slip = 0;
+        m_states.cp_long_slip_t = 0;
+        m_states.cp_side_slip_t = 0;
         m_states.vx           = 0;
         m_states.vsx          = 0;
         m_states.vsy          = 0;
@@ -167,6 +169,43 @@ void ChStiremodTire::Advance(double step) {
     ChClampValue(m_states.cp_side_slip, -CH_PI_2 + 0.001, CH_PI_2 - 0.001);
 
     // ------------------------------------------------------------------
+    // 1b. Integrate transient slip dynamics (relaxation lengths)
+    // ------------------------------------------------------------------
+    // First-order lag model: the tire contact patch doesn't respond
+    // instantaneously to changes in slip. The transient slip values
+    // lag behind the steady-state kinematic values with time constants
+    // determined by the relaxation lengths and vehicle velocity.
+    //
+    // dκ_t/dt = (V/σ_x) × (κ_steady - κ_t)
+    // dα_t/dt = (V/σ_y) × (α_steady - α_t)
+    //
+    // where σ_x, σ_y are the longitudinal and lateral relaxation lengths.
+    
+    double vel_relax = std::max(m_states.vx, 0.1);  // Avoid division by zero at standstill
+    
+    // Longitudinal slip dynamics
+    if (m_longitudinal_relax_length > 0.0) {
+        double tau_x = m_longitudinal_relax_length / vel_relax;  // time constant
+        double dkappa_dt = (m_states.cp_long_slip - m_states.cp_long_slip_t) / tau_x;
+        m_states.cp_long_slip_t += dkappa_dt * step;
+        ChClampValue(m_states.cp_long_slip_t, -1.0, 1.0);
+    } else {
+        // No relaxation: transient = steady-state
+        m_states.cp_long_slip_t = m_states.cp_long_slip;
+    }
+    
+    // Lateral slip angle dynamics
+    if (m_lateral_relax_length > 0.0) {
+        double tau_y = m_lateral_relax_length / vel_relax;  // time constant
+        double dalpha_dt = (m_states.cp_side_slip - m_states.cp_side_slip_t) / tau_y;
+        m_states.cp_side_slip_t += dalpha_dt * step;
+        ChClampValue(m_states.cp_side_slip_t, -CH_PI_2 + 0.001, CH_PI_2 - 0.001);
+    } else {
+        // No relaxation: transient = steady-state
+        m_states.cp_side_slip_t = m_states.cp_side_slip;
+    }
+
+    // ------------------------------------------------------------------
     // 2.  Low-speed Dahl bristle forces (Fx0, Fy0) — used for blending
     // ------------------------------------------------------------------
     double Fx0 = 0, Fy0 = 0;
@@ -188,8 +227,9 @@ void ChStiremodTire::Advance(double step) {
 
     // STIREMOD uses the modified-SAE alpha convention: positive alpha
     // produces negative Fy (handled inside stiremod_calculate).
-    double alpha_deg = m_states.cp_side_slip * CH_RAD_TO_DEG;
-    double kappa     = m_states.cp_long_slip;
+    // Use the transient (relaxed) slip values, not the instantaneous kinematic values.
+    double alpha_deg = m_states.cp_side_slip_t * CH_RAD_TO_DEG;
+    double kappa     = m_states.cp_long_slip_t;
 
     // Scale terrain friction through the skid-number ratio.
     // When m_mu == m_mu0 the ratio is 1.0 and the nominal STIREMOD
